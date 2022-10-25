@@ -47,7 +47,7 @@ tap-mssql --about --format=markdown
 | Setting             | Required | Default | Description |
 |:--------------------|:--------:|:-------:|:------------|
 | dialect             | False    | None    | The Dialect of SQLAlchamey |
-| driver_type         | False    | None    | The Python Driver you will be using to connect to the SQL server |
+| driver_type         | False    | None    | The Python Driver you will be using to connect to the SQL server (either "pyodbc" or "pymssql") |
 | host                | False    | None    | The FQDN of the Host serving out the SQL Instance |
 | port                | False    | None    | The port on which SQL awaiting connection |
 | user                | False    | None    | The User Account who has been granted access to the SQL Server |
