@@ -21,7 +21,7 @@ class mssqlConnector(SQLConnector):
             cls.logger.error("Invalid dialect given")
             exit(1)
 
-        if config['driver_type'] in ["pyodbc"]:
+        if config['driver_type'] in ["pyodbc", "pymssql"]:
             url_drivername += f"+{config['driver_type']}"
         else:
             cls.logger.error("Invalid driver_type given")
