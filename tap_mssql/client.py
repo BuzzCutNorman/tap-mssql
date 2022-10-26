@@ -69,13 +69,9 @@ class mssqlConnector(SQLConnector):
         eng_prefix = "ep."
         eng_config = {f"{eng_prefix}url":self.sqlalchemy_url,f"{eng_prefix}echo":"False"}
 
-        self.logger.info(super().config.get('sqlalchemy_eng_params'))
-
         if self.config.get('sqlalchemy_eng_params'):
-            for eng_param in super().config['sqlalchemy_eng_params']:
-                eng_config.update(eng_param)
-            
-        self.logger.info(eng_config)
+            for key, value in self.config['sqlalchemy_eng_params'].items():
+                eng_config.update({f"{eng_prefix}{key}": value})
 
         return sqlalchemy.engine_from_config(eng_config, prefix=eng_prefix)
 
