@@ -1,6 +1,6 @@
 # tap-mssql
 
-`tap-mssql` is a Singer tap for mssql. !!! Warning !!! really early version.  It works barely.
+`tap-mssql` is a Singer tap for mssql. !!! Warning !!! work in progress.  Full loads working. You can setup a batch_config and generate batch messages.
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
