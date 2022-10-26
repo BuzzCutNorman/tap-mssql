@@ -56,6 +56,17 @@ class mssqlConnector(SQLConnector):
         
         return (config_url)
 
+    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
+        """Return a new SQLAlchemy engine using the provided config.
+
+        Developers can generally override just one of the following:
+        `sqlalchemy_engine`, sqlalchemy_url`.
+
+        Returns:
+            A newly created SQLAlchemy engine object.
+        """
+        return sqlalchemy.create_engine(self.sqlalchemy_url, echo=False)
+
     @staticmethod
     def to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
         """Returns a JSON Schema equivalent for the given SQL type.
