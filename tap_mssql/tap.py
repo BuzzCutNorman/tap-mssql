@@ -52,12 +52,6 @@ class Tapmssql(SQLTap):
             "sqlalchemy_eng_params",
             th.ObjectType(
                 th.Property(
-                "echo",
-                th.StringType,
-                default=False,
-                description="SQLAlchemy echo work to screen: True, False(default)"
-                ),
-                th.Property(
                 "fast_executemany",
                 th.StringType,
                 description="Fast Executemany Mode: True, False"
