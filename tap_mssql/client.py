@@ -3,6 +3,7 @@
 This includes mssqlStream and mssqlConnector.
 """
 from __future__ import annotations
+from copy import deepcopy
 
 import gzip
 import json
@@ -55,6 +56,24 @@ class mssqlConnector(SQLConnector):
             config_url = config_url.update_query_dict(config['sqlalchemy_url_query'])
         
         return (config_url)
+
+    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
+        """Return a new SQLAlchemy engine using the provided config.
+
+        Developers can generally override just one of the following:
+        `sqlalchemy_engine`, sqlalchemy_url`.
+
+        Returns:
+            A newly created SQLAlchemy engine object.
+        """
+        eng_prefix = "ep."
+        eng_config = {f"{eng_prefix}url":self.sqlalchemy_url,f"{eng_prefix}echo":"False"}
+
+        if self.config.get('sqlalchemy_eng_params'):
+            for key, value in self.config['sqlalchemy_eng_params'].items():
+                eng_config.update({f"{eng_prefix}{key}": value})
+
+        return sqlalchemy.engine_from_config(eng_config, prefix=eng_prefix)
 
     @staticmethod
     def to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:

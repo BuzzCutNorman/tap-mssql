@@ -49,6 +49,22 @@ class Tapmssql(SQLTap):
             description="The Default database for this connection"
         ),
         th.Property(
+            "sqlalchemy_eng_params",
+            th.ObjectType(
+                th.Property(
+                "fast_executemany",
+                th.StringType,
+                description="Fast Executemany Mode: True, False"
+                ),
+                th.Property(
+                "future",
+                th.StringType,
+                description="Run the engine in 2.0 mode: True, False"
+                )
+            ),
+            description="SQLAlchemy Engine Paramaters: fast_executemany, future"
+        ),
+        th.Property(
             "sqlalchemy_url_query",
             th.ObjectType(
                 th.Property(

@@ -53,6 +53,7 @@ tap-mssql --about --format=markdown
 | user                | False    | None    | The User Account who has been granted access to the SQL Server |
 | password            | False    | None    | The Password for the User account |
 | database            | False    | None    | The Default database for this connection |
+| sqlalchemy_eng_params| False    | None    | SQLAlchemy Engine Paramaters: fast_executemany, future |
 | sqlalchemy_url_query| False    | None    | SQLAlchemy URL Query options: driver, TrustServerCertificate |
 | batch_config        | False    | None    | Optional Batch Message configuration |
 | start_date          | False    | None    | The earliest record date to sync |
