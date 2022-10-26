@@ -62,7 +62,7 @@ class Tapmssql(SQLTap):
                 description="Run the engine in 2.0 mode: True, False"
                 )
             ),
-            description="SQLAlchemy Engine Paramaters: echo, fast_executemany, future"
+            description="SQLAlchemy Engine Paramaters: fast_executemany, future"
         ),
         th.Property(
             "sqlalchemy_url_query",
