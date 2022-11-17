@@ -26,7 +26,7 @@ python-versions = ">=3.5"
 dev = ["cloudpickle", "coverage[toml] (>=5.0.2)", "furo", "hypothesis", "mypy (>=0.900,!=0.940)", "pre-commit", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "sphinx", "sphinx-notfound-page", "zope.interface"]
 docs = ["furo", "sphinx", "sphinx-notfound-page", "zope.interface"]
 tests = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy (>=0.900,!=0.940)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "zope.interface"]
-tests_no_zope = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy (>=0.900,!=0.940)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins"]
+tests-no-zope = ["cloudpickle", "coverage[toml] (>=5.0.2)", "hypothesis", "mypy (>=0.900,!=0.940)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "backoff"
@@ -53,7 +53,7 @@ tomli = ">=0.2.6,<2.0.0"
 typed-ast = {version = ">=1.4.2", markers = "python_version < \"3.8\" and implementation_name == \"cpython\""}
 typing-extensions = [
     {version = ">=3.10.0.0", markers = "python_version < \"3.10\""},
-    {version = "!=3.10.0.1", markers = "python_version >= \"3.10\""},
+    {version = ">=3.10.0.0,<3.10.0.1 || >3.10.0.1", markers = "python_version >= \"3.10\""},
 ]
 
 [package.extras]
@@ -91,7 +91,7 @@ optional = false
 python-versions = ">=3.6.0"
 
 [package.extras]
-unicode_backport = ["unicodedata2"]
+unicode-backport = ["unicodedata2"]
 
 [[package]]
 name = "click"
@@ -184,6 +184,7 @@ python-versions = "*"
 
 [package.dependencies]
 appdirs = ">=1.4.3,<1.5.0"
+setuptools = "*"
 six = ">=1.10,<2.0"
 
 [package.extras]
@@ -198,7 +199,7 @@ optional = false
 python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
 
 [package.extras]
-docs = ["sphinx"]
+docs = ["Sphinx"]
 
 [[package]]
 name = "idna"
@@ -210,7 +211,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "5.0.0"
+version = "4.13.0"
 description = "Read metadata from Python packages"
 category = "main"
 optional = false
@@ -227,7 +228,7 @@ testing = ["flake8 (<5)", "flufl.flake8", "importlib-resources (>=1.3)", "packag
 
 [[package]]
 name = "importlib-resources"
-version = "5.10.0"
+version = "5.9.0"
 description = "Read resources from Python packages"
 category = "main"
 optional = false
@@ -237,8 +238,8 @@ python-versions = ">=3.7"
 zipp = {version = ">=3.1.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
-docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)"]
-testing = ["flake8 (<5)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
+docs = ["jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx"]
+testing = ["pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
 [[package]]
 name = "inflection"
@@ -266,9 +267,9 @@ python-versions = ">=3.6.1,<4.0"
 
 [package.extras]
 colors = ["colorama (>=0.4.3,<0.5.0)"]
-pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
+pipfile-deprecated-finder = ["pipreqs", "requirementslib"]
 plugins = ["setuptools"]
-requirements_deprecated_finder = ["pip-api", "pipreqs"]
+requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [[package]]
 name = "joblib"
@@ -489,7 +490,7 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pyodbc"
-version = "4.0.34"
+version = "4.0.35"
 description = "DB API Module for ODBC"
 category = "main"
 optional = false
@@ -598,7 +599,20 @@ urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
+use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
+
+[[package]]
+name = "setuptools"
+version = "65.5.1"
+description = "Easily download, build, install, upgrade, and uninstall Python packages"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-hoverxref (<2)", "sphinx-inline-tabs", "sphinx-notfound-page (==0.8.3)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
+testing = ["build[virtualenv]", "filelock (>=3.4.0)", "flake8 (<5)", "flake8-2020", "ini2toml[lite] (>=0.9)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pip (>=19.1)", "pip-run (>=8.8)", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)", "pytest-perf", "pytest-timeout", "pytest-xdist", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
+testing-integration = ["build[virtualenv]", "filelock (>=3.4.0)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "pytest", "pytest-enabler", "pytest-xdist", "tomli", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
 name = "simplejson"
@@ -610,19 +624,19 @@ python-versions = ">=2.5, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "singer-sdk"
-version = "0.13.0"
+version = "0.14.0"
 description = "A framework for building Singer taps"
 category = "main"
 optional = false
-python-versions = ">=3.7.1,<3.11"
+python-versions = ">=3.7.1,<3.12"
 
 [package.dependencies]
 backoff = ">=2.0.0,<3.0"
 click = ">=8.0,<9.0"
 cryptography = ">=3.4.6,<39.0.0"
 fs = ">=2.4.16,<3.0.0"
-importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
-importlib-resources = {version = ">=5.9.0,<6.0.0", markers = "python_version < \"3.9\""}
+importlib-metadata = {version = "<5.0.0", markers = "python_version < \"3.8\""}
+importlib-resources = {version = "5.9.0", markers = "python_version < \"3.9\""}
 inflection = ">=0.5.1,<0.6.0"
 joblib = ">=1.0.1,<2.0.0"
 jsonpath-ng = ">=1.5.3,<2.0.0"
@@ -639,7 +653,7 @@ sqlalchemy = ">=1.4,<2.0"
 typing-extensions = ">=4.2.0,<5.0.0"
 
 [package.extras]
-docs = ["myst-parser (>=0.17.2,<0.19.0)", "sphinx (>=4.5,<6.0)", "sphinx-autobuild (>=2021.3.14,<2022.0.0)", "sphinx-copybutton (>=0.3.1,<0.6.0)", "sphinx-rtd-theme (>=0.5.2,<1.1.0)"]
+docs = ["myst-parser (>=0.17.2,<0.19.0)", "sphinx (>=4.5,<6.0)", "sphinx-autobuild (>=2021.3.14,<2022.0.0)", "sphinx-copybutton (>=0.3.1,<0.6.0)", "sphinx-rtd-theme (>=0.5.2,<1.2.0)"]
 
 [[package]]
 name = "six"
@@ -674,21 +688,21 @@ aiomysql = ["aiomysql", "greenlet (!=0.4.17)"]
 aiosqlite = ["aiosqlite", "greenlet (!=0.4.17)", "typing_extensions (!=3.10.0.1)"]
 asyncio = ["greenlet (!=0.4.17)"]
 asyncmy = ["asyncmy (>=0.2.3,!=0.2.4)", "greenlet (!=0.4.17)"]
-mariadb_connector = ["mariadb (>=1.0.1,!=1.1.2)"]
+mariadb-connector = ["mariadb (>=1.0.1,!=1.1.2)"]
 mssql = ["pyodbc"]
-mssql_pymssql = ["pymssql"]
-mssql_pyodbc = ["pyodbc"]
+mssql-pymssql = ["pymssql"]
+mssql-pyodbc = ["pyodbc"]
 mypy = ["mypy (>=0.910)", "sqlalchemy2-stubs"]
 mysql = ["mysqlclient (>=1.4.0)", "mysqlclient (>=1.4.0,<2)"]
-mysql_connector = ["mysql-connector-python"]
+mysql-connector = ["mysql-connector-python"]
 oracle = ["cx_oracle (>=7)", "cx_oracle (>=7,<8)"]
 postgresql = ["psycopg2 (>=2.7)"]
-postgresql_asyncpg = ["asyncpg", "greenlet (!=0.4.17)"]
-postgresql_pg8000 = ["pg8000 (>=1.16.6,!=1.29.0)"]
-postgresql_psycopg2binary = ["psycopg2-binary"]
-postgresql_psycopg2cffi = ["psycopg2cffi"]
+postgresql-asyncpg = ["asyncpg", "greenlet (!=0.4.17)"]
+postgresql-pg8000 = ["pg8000 (>=1.16.6,!=1.29.0)"]
+postgresql-psycopg2binary = ["psycopg2-binary"]
+postgresql-psycopg2cffi = ["psycopg2cffi"]
 pymysql = ["pymysql", "pymysql (<1)"]
-sqlcipher = ["sqlcipher3-binary"]
+sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "toml"
@@ -810,7 +824,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "<3.11,>=3.7.1"
-content-hash = "3a4d0d0a942c11316b1b0e986636a1a5028f6e3876df5990ea21224372605f76"
+content-hash = "3886cd65f834ee5200cfac3e48ed1301bd7bf57cd388dc3b0cc4641b76b4f5f8"
 
 [metadata.files]
 appdirs = [
@@ -1035,12 +1049,12 @@ idna = [
     {file = "idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-5.0.0-py3-none-any.whl", hash = "sha256:ddb0e35065e8938f867ed4928d0ae5bf2a53b7773871bfe6bcc7e4fcdc7dea43"},
-    {file = "importlib_metadata-5.0.0.tar.gz", hash = "sha256:da31db32b304314d044d3c12c79bd59e307889b287ad12ff387b3500835fc2ab"},
+    {file = "importlib_metadata-4.13.0-py3-none-any.whl", hash = "sha256:8a8a81bcf996e74fee46f0d16bd3eaa382a7eb20fd82445c3ad11f4090334116"},
+    {file = "importlib_metadata-4.13.0.tar.gz", hash = "sha256:dd0173e8f150d6815e098fd354f6414b0f079af4644ddfe90c71e2fc6174346d"},
 ]
 importlib-resources = [
-    {file = "importlib_resources-5.10.0-py3-none-any.whl", hash = "sha256:ee17ec648f85480d523596ce49eae8ead87d5631ae1551f913c0100b5edd3437"},
-    {file = "importlib_resources-5.10.0.tar.gz", hash = "sha256:c01b1b94210d9849f286b86bb51bcea7cd56dde0600d8db721d7b81330711668"},
+    {file = "importlib_resources-5.9.0-py3-none-any.whl", hash = "sha256:f78a8df21a79bcc30cfd400bdc38f314333de7c0fb619763f6b9dabab8268bb7"},
+    {file = "importlib_resources-5.9.0.tar.gz", hash = "sha256:5481e97fb45af8dcf2f798952625591c58fe599d0735d86b10f54de086a61681"},
 ]
 inflection = [
     {file = "inflection-0.5.1-py2.py3-none-any.whl", hash = "sha256:f38b2b640938a4f35ade69ac3d053042959b62a0f1076a5bbaa1b9526605a8a2"},
@@ -1175,22 +1189,37 @@ pyjwt = [
     {file = "PyJWT-2.6.0.tar.gz", hash = "sha256:69285c7e31fc44f68a1feb309e948e0df53259d579295e6cfe2b1792329f05fd"},
 ]
 pyodbc = [
-    {file = "pyodbc-4.0.34-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:07caafd49335e444f66d7ac78a87ffd1b8ce71d352b5bf0ffaa93d9ea82b003b"},
-    {file = "pyodbc-4.0.34-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:9d8ca2122c2671264d53f0009e4c96b80b4da9bd44394e6ef6692b3aeb34be7c"},
-    {file = "pyodbc-4.0.34-cp310-cp310-win_amd64.whl", hash = "sha256:befe795303ff13d55fa15c42496aa414cd60f465e8d96daec8c9b48bfea2c1ec"},
-    {file = "pyodbc-4.0.34-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:5502d98e7bb37d6407e97ecd9f6528e9512439c7c3ff6f444d8b4b59ebb5ef4b"},
-    {file = "pyodbc-4.0.34-cp36-cp36m-manylinux_2_24_x86_64.whl", hash = "sha256:5a400524ad64dcd242ea75070789696f7157e23597767340307494e4b85c5a8e"},
-    {file = "pyodbc-4.0.34-cp36-cp36m-win_amd64.whl", hash = "sha256:991c1441b5067e88c37f32eb79b4015fda6b5451b396187325ec594bd4d5ae74"},
-    {file = "pyodbc-4.0.34-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:b80aee02983130cf0087234d226e2310b527d093402b60d307f2b90dc038ff65"},
-    {file = "pyodbc-4.0.34-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:9b2bb29121971b3316faeb2593e59f6f9faebd85048b4f0716b46c6282c1b9a8"},
-    {file = "pyodbc-4.0.34-cp37-cp37m-win_amd64.whl", hash = "sha256:2ad077231c6f33555abd6e482ce027739c54430b973477a42094fbae2f3d9791"},
-    {file = "pyodbc-4.0.34-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:5eda44df6c064d43075ced640d955399a663523028a847132a50fc02722c4904"},
-    {file = "pyodbc-4.0.34-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:5e454fe5ac21d5a920e2d1f269c38e2af2d045ea97979951953f57f41ac8cea0"},
-    {file = "pyodbc-4.0.34-cp38-cp38-win_amd64.whl", hash = "sha256:c8d95528d0c33fb24d0928d8cfe7dd194f7406a3da9c4a73b6fcb203b66addd4"},
-    {file = "pyodbc-4.0.34-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:402e94519ee95ae7ce0a792fc37fc3922f8a970337edc873b03d64427815ac8f"},
-    {file = "pyodbc-4.0.34-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:e8244184fd7b92cafbdb417709a214371fe489d6fed97e61d130ceb2891f5e52"},
-    {file = "pyodbc-4.0.34-cp39-cp39-win_amd64.whl", hash = "sha256:eb7a1a15eb35322e62bfb1c2910274106781edf4dc268ad2b0e9fc89958689e4"},
-    {file = "pyodbc-4.0.34.tar.gz", hash = "sha256:7ea7869532b96b8d529b1f08ea85765f94df7e4a58e968b2f8d455346a03e45c"},
+    {file = "pyodbc-4.0.35-cp27-cp27m-win32.whl", hash = "sha256:c3ab48723c647bfd38dfa60dde3c1967e4e0e92a11c93ae30ec6665765e5a0f7"},
+    {file = "pyodbc-4.0.35-cp27-cp27m-win_amd64.whl", hash = "sha256:f964f5f153569dae60b149b35aa7d54b46fb38c6bf928c346d928771b0a5f590"},
+    {file = "pyodbc-4.0.35-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e9a69b16fc59b74a9153c06e452a8093eae4a6ea542462811f517e7ccc5ff3e8"},
+    {file = "pyodbc-4.0.35-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:cfe3c59fb151daef483533ab94b6b7367fa643137f94dac0a189e9779d691755"},
+    {file = "pyodbc-4.0.35-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fe0448f3d39253ed55d1b2b4bfa22f04413e8d0b09202a81d74e4cbe54de34a4"},
+    {file = "pyodbc-4.0.35-cp310-cp310-win32.whl", hash = "sha256:3bbd1819c7441766a086bf24d7803a7fd466f22dbbaffcab7acc01397961e552"},
+    {file = "pyodbc-4.0.35-cp310-cp310-win_amd64.whl", hash = "sha256:c7f8e34b18474bc347bd3623408c8ecb405cf2fa71cb72e42b9657f4ffbc146a"},
+    {file = "pyodbc-4.0.35-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ea33e115ea6b3f5113a647c4a121247d32d8f338c3d9e1937b50222e52ad4360"},
+    {file = "pyodbc-4.0.35-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8388c222a64fc8b0039be8e2663212e6a2915c842d5fd34f32126ee392b6c48e"},
+    {file = "pyodbc-4.0.35-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:95c1e3f2747af0957de17192811f06525a8e9c3e6491b4698b3f34d626333be7"},
+    {file = "pyodbc-4.0.35-cp311-cp311-win32.whl", hash = "sha256:71aa000e8ac925ccfabb2cdb9b2ec3247de243305d12bf5b24fcdd248ffd07e3"},
+    {file = "pyodbc-4.0.35-cp311-cp311-win_amd64.whl", hash = "sha256:df74d692e3002208ef16994adcd0ba0a5f579ec8621a2aa2866195defcecfdb1"},
+    {file = "pyodbc-4.0.35-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:9632c19850bdeeb7ce2e9e38cf64df1688cd803e810bf18ab92fb0588956f7be"},
+    {file = "pyodbc-4.0.35-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4b3d978619e68d0a6d6bc1f7749575b6de4ac4312aab0e889a18315b1bb06e9b"},
+    {file = "pyodbc-4.0.35-cp36-cp36m-win32.whl", hash = "sha256:baf1d62959de66a664b4d63c4af00d09f107981be7a8961ce235a0fce386663b"},
+    {file = "pyodbc-4.0.35-cp36-cp36m-win_amd64.whl", hash = "sha256:729b4454ede1384c4eb0608b552d59e933b377bc9f3d68a0b3d44f00c8c2ecab"},
+    {file = "pyodbc-4.0.35-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:38da788c66e9594174635ee37f494d0211fe2b5634aa2364be28317b1bbed16d"},
+    {file = "pyodbc-4.0.35-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9918c50936e80cac300c9423c5936a2573543e2476749155616ef50685891145"},
+    {file = "pyodbc-4.0.35-cp37-cp37m-win32.whl", hash = "sha256:b6f1d113d382fed53fd2f5692266c83409ecbdc6144a7e1abbed76050e9e5973"},
+    {file = "pyodbc-4.0.35-cp37-cp37m-win_amd64.whl", hash = "sha256:c24115c491585018faf88b1cafc73a91e177ff57c7d82d04abebe7fb52cae6b3"},
+    {file = "pyodbc-4.0.35-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:12b7a308e9e30d2da96a613ac12d46cd6f81a4791e5c5849e382e73eda1d23a2"},
+    {file = "pyodbc-4.0.35-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:d94dd82d8ded92d3f7ed7d575dc53127e1bcc2bb7ada0ccac51eb4520cffc780"},
+    {file = "pyodbc-4.0.35-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0c9fb521b376d1b804ada98c6dd12a8b349c301060bfdc194a5045882f0b2887"},
+    {file = "pyodbc-4.0.35-cp38-cp38-win32.whl", hash = "sha256:cd885f28ba39debb1c8ace95a1fed551835a5a399778350094c71d0007e42a75"},
+    {file = "pyodbc-4.0.35-cp38-cp38-win_amd64.whl", hash = "sha256:dda0b6f9728941523e5b84b6a12bdcff420596451d2cfefcd7f21ace3bfde334"},
+    {file = "pyodbc-4.0.35-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:389a8522806f439c430f5f339186e02b130f7b2de91c1366f44a21fb1229bb1b"},
+    {file = "pyodbc-4.0.35-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f068590bcce50b0120e88ec4f90d65f660e8d39052fad3733a40614623a987e4"},
+    {file = "pyodbc-4.0.35-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2b92c67e8255c8636af687f56361eaa420dd5d1b7bc883e2ff473d85a5e63e08"},
+    {file = "pyodbc-4.0.35-cp39-cp39-win32.whl", hash = "sha256:27340dff78694fee6e6629500ecbfbafc7694861e22256ff00af9865442d1bfe"},
+    {file = "pyodbc-4.0.35-cp39-cp39-win_amd64.whl", hash = "sha256:2a85203d2b6ab417f52600295294a5bb46a69fa383764959b57e8d843090fd43"},
+    {file = "pyodbc-4.0.35.tar.gz", hash = "sha256:92b9af48e8b928455bc8b94bf3da05751faec0932a11eee237c189c6d439e5c8"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},
@@ -1285,6 +1314,10 @@ requests = [
     {file = "requests-2.28.1-py3-none-any.whl", hash = "sha256:8fefa2a1a1365bf5520aac41836fbee479da67864514bdb821f31ce07ce65349"},
     {file = "requests-2.28.1.tar.gz", hash = "sha256:7c5599b102feddaa661c826c56ab4fee28bfd17f5abca1ebbe3e7f19d7c97983"},
 ]
+setuptools = [
+    {file = "setuptools-65.5.1-py3-none-any.whl", hash = "sha256:d0b9a8433464d5800cbe05094acf5c6d52a91bfac9b52bcfc4d41382be5d5d31"},
+    {file = "setuptools-65.5.1.tar.gz", hash = "sha256:e197a19aa8ec9722928f2206f8de752def0e4c9fc6953527360d1c36d94ddb2f"},
+]
 simplejson = [
     {file = "simplejson-3.17.6-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:a89acae02b2975b1f8e4974cb8cdf9bf9f6c91162fb8dec50c259ce700f2770a"},
     {file = "simplejson-3.17.6-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:82ff356ff91be0ab2293fc6d8d262451eb6ac4fd999244c4b5f863e049ba219c"},
@@ -1349,8 +1382,8 @@ simplejson = [
     {file = "simplejson-3.17.6.tar.gz", hash = "sha256:cf98038d2abf63a1ada5730e91e84c642ba6c225b0198c3684151b1f80c5f8a6"},
 ]
 singer-sdk = [
-    {file = "singer_sdk-0.13.0-py3-none-any.whl", hash = "sha256:5e32c0f8cb7c7f3f80a6d8da5c6bec8ace0315f04da80f51fd9827d8a9d28e36"},
-    {file = "singer_sdk-0.13.0.tar.gz", hash = "sha256:6b29e3b7daa328386dc70fc0c39e6314a610598ab20986eaa80e0a17fd584b44"},
+    {file = "singer_sdk-0.14.0-py3-none-any.whl", hash = "sha256:634802ed4e9c71e9ade4bb772f4b2f1510b2cb971957f96a163fb592560a5cd8"},
+    {file = "singer_sdk-0.14.0.tar.gz", hash = "sha256:c69b670f5202e833db3c5ecac68dabb280f6cdaa645a55c2a5dce256554eddb0"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
