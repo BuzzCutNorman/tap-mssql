@@ -90,10 +90,13 @@ class mssqlConnector(SQLConnector):
         """
         if str(sql_type).startswith("NUMERIC"):
             if str(sql_type).endswith(", 0)"):
-               sql_type = "INTEGER"
+               sql_type = "int"
             else: 
-               sql_type = "NUMBER"
+               sql_type = "number"
         
+        if str(sql_type) in ["MONEY", "SMALLMONEY"]:
+            sql_type = "number"
+            
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
