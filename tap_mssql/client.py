@@ -12,6 +12,7 @@ from uuid import uuid4
 from typing import Any, Dict, Iterable, Optional
 
 import pendulum
+import pyodbc
 
 import sqlalchemy
 from sqlalchemy.engine import URL
@@ -26,6 +27,15 @@ from singer_sdk.streams.core import lazy_chunked_generator
 
 class mssqlConnector(SQLConnector):
     """Connects to the mssql SQL source."""
+    
+    def __init__(self, config: dict | None = None, sqlalchemy_url: str | None = None) -> None:
+        """Class Default Init"""
+        # If pyodbc given set pyodbc.pooling to False
+        # This allows SQLA to manage to connection pool
+        if config['driver_type'] == 'pyodbc':
+            pyodbc.pooling = False;
+
+        super().__init__(config, sqlalchemy_url)
 
     def get_sqlalchemy_url(cls, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
