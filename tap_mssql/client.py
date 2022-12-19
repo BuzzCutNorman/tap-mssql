@@ -82,6 +82,13 @@ class mssqlConnector(SQLConnector):
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
         """
+    
+        # This is a MSSQL only DataType
+        # SQLA does the converion from 0,1
+        # to Python True, False
+        if str(sql_type) == 'BIT':
+            return{"type": ["boolean"]}
+
         # This is a MSSQL only DataType
         if str(sql_type) == 'TINYINT':
             return {
@@ -111,11 +118,9 @@ class mssqlConnector(SQLConnector):
                 "maximum": 9223372036854775807
             }
 
-        """
-        Checks for the MSSQL type of NUMERIC 
-            if scale = 0 it is typed as a INTEGER
-            if scale != 0 it is typed as NUMBER
-        """
+        # Checks for the MSSQL type of NUMERIC 
+        #     if scale = 0 it is typed as a INTEGER
+        #     if scale != 0 it is typed as NUMBER
         if str(sql_type).startswith("NUMERIC"):
             if str(sql_type).endswith(", 0)"):
                sql_type = "int"
