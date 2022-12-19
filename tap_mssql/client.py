@@ -82,36 +82,48 @@ class mssqlConnector(SQLConnector):
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
         """
-    
+        
+        # This is taken from to_jsonschema_type() in typing.py 
+        if isinstance(sql_type, str):
+            sql_type_name = sql_type
+        elif isinstance(sql_type, sqlalchemy.types.TypeEngine):
+            sql_type_name = type(sql_type).__name__
+        elif isinstance(sql_type, type) and issubclass(
+            sql_type, sqlalchemy.types.TypeEngine
+        ):
+            sql_type_name = sql_type.__name__
+        else:
+            raise ValueError("Expected `str` or a SQLAlchemy `TypeEngine` object or type.")
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
-        if str(sql_type) == 'BIT':
+        if sql_type_name == 'BIT':
             return{"type": ["boolean"]}
 
         # This is a MSSQL only DataType
-        if str(sql_type) == 'TINYINT':
+        if sql_type_name == 'TINYINT':
             return {
                 "type": ["integer"],
                  "minimum": 0,
                  "maximum": 255
             }
 
-        if str(sql_type) == 'SMALLINT':
+        if sql_type_name == 'SMALLINT':
             return {
                 "type": ["integer"], 
                 "minimum": -32768,
                 "maximum": 32767
             }
 
-        if str(sql_type) == 'INTEGER':
+        if sql_type_name == 'INTEGER':
             return {
                 "type": ["integer"],
                 "minimum": -2147483648,
                 "maximum": 2147483647
             }
 
-        if str(sql_type) == 'BIGINT':
+        if sql_type_name == 'BIGINT':
             return {
                 "type": ["integer"], 
                 "minimum": -9223372036854775808,
@@ -121,13 +133,30 @@ class mssqlConnector(SQLConnector):
         # Checks for the MSSQL type of NUMERIC 
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
-        if str(sql_type).startswith("NUMERIC"):
-            if str(sql_type).endswith(", 0)"):
-               sql_type = "int"
+        if sql_type_name =="NUMERIC":
+            if getattr(sql_type, 'scale') == 0:
+                if getattr(sql_type, 'precision') < 5: 
+                    return {
+                        "type": ["integer"],
+                        "minimum": -32768,
+                        "maximum": 32767
+                    }
+                elif getattr(sql_type, 'precision') < 10: 
+                    return {
+                        "type": ["integer"],
+                        "minimum": -2147483648,
+                        "maximum": 2147483647
+                    }
+                else:
+                    return {
+                        "type": ["integer"], 
+                        "minimum": -9223372036854775808,
+                        "maximum": 9223372036854775807
+                    }    
             else: 
                sql_type = "number"
         
-        if str(sql_type) in ["MONEY", "SMALLMONEY"]:
+        if sql_type_name in ["MONEY", "SMALLMONEY"]:
             sql_type = "number"
             
         return SQLConnector.to_jsonschema_type(sql_type)
