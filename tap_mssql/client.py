@@ -60,7 +60,7 @@ class mssqlConnector(SQLConnector):
         )
 
         if 'port' in config:
-            config_url.set(port=config['port'])
+            config_url = config_url.set(port=config['port'])
         
         if 'sqlalchemy_url_query' in config:
             config_url = config_url.update_query_dict(config['sqlalchemy_url_query'])
