@@ -95,6 +95,16 @@ class mssqlConnector(SQLConnector):
         else:
             raise ValueError("Expected `str` or a SQLAlchemy `TypeEngine` object or type.")
 
+        # Add in the length of the 
+        if sql_type_name in ['CHAR','NCHAR', 'VARCHAR','NVARCHAR']:
+           maxLength:int = getattr(sql_type, 'length')
+
+           if getattr(sql_type, 'length'):
+            return {
+                "type": ["string"],
+                "maxLength": maxLength
+            } 
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
@@ -158,7 +168,7 @@ class mssqlConnector(SQLConnector):
         
         if sql_type_name in ["MONEY", "SMALLMONEY"]:
             sql_type = "number"
-            
+    
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
