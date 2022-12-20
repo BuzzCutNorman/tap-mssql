@@ -166,8 +166,21 @@ class mssqlConnector(SQLConnector):
             else: 
                sql_type = "number"
         
-        if sql_type_name in ["MONEY", "SMALLMONEY"]:
-            sql_type = "number"
+        # This is a MSSQL only DataType
+        if sql_type_name == "SMALLMONEY":
+             return {
+                "type": ["number"],
+                "minimum": -214748.3648,
+                "maximum": 214748.3647
+            }
+       
+        # This is a MSSQL only DataType
+        if sql_type_name == "MONEY":
+            return {
+                "type": ["number"],
+                "minimum": float(-922337203685477.5808),
+                "maximum": float(922337203685477.5807)
+            }
     
         return SQLConnector.to_jsonschema_type(sql_type)
 
