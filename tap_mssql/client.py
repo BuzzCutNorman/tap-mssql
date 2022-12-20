@@ -178,8 +178,8 @@ class mssqlConnector(SQLConnector):
         if sql_type_name == "MONEY":
             return {
                 "type": ["number"],
-                "minimum": float(-922337203685477.5808),
-                "maximum": float(922337203685477.5807)
+                "minimum": -922337203685477.5808,
+                "maximum": 922337203685477.5807
             }
     
         return SQLConnector.to_jsonschema_type(sql_type)
