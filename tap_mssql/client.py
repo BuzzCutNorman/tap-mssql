@@ -145,13 +145,14 @@ class mssqlConnector(SQLConnector):
         #     if scale != 0 it is typed as NUMBER
         if sql_type_name =="NUMERIC":
             if getattr(sql_type, 'scale') == 0:
-                if getattr(sql_type, 'precision') < 5: 
+                precision = getattr(sql_type, 'precision')
+                if precision < 5: 
                     return {
                         "type": ["integer"],
                         "minimum": -32768,
                         "maximum": 32767
                     }
-                elif getattr(sql_type, 'precision') < 10: 
+                elif precision < 10: 
                     return {
                         "type": ["integer"],
                         "minimum": -2147483648,
@@ -175,12 +176,28 @@ class mssqlConnector(SQLConnector):
             }
        
         # This is a MSSQL only DataType
+        # The min and max are getting truncated catalog 
         if sql_type_name == "MONEY":
             return {
                 "type": ["number"],
                 "minimum": -922337203685477.5808,
                 "maximum": 922337203685477.5807
             }
+
+        if sql_type_name == "FLOAT":
+            return {
+                "type": ["number"],
+                "minimum": -1.79e308,
+                "maximum": 1.79e308
+            }
+        
+        if sql_type_name == "REAL":
+            return {
+                "type": ["number"],
+                "minimum": -3.40e38,
+                "maximum": 3.40e38
+            }
+
     
         return SQLConnector.to_jsonschema_type(sql_type)
 
