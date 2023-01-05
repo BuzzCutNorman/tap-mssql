@@ -3,7 +3,6 @@
 This includes mssqlStream and mssqlConnector.
 """
 from __future__ import annotations
-from copy import deepcopy
 
 import gzip
 import json
@@ -33,7 +32,7 @@ class mssqlConnector(SQLConnector):
         # If pyodbc given set pyodbc.pooling to False
         # This allows SQLA to manage to connection pool
         if config['driver_type'] == 'pyodbc':
-            pyodbc.pooling = False;
+            pyodbc.pooling = False
 
         super().__init__(config, sqlalchemy_url)
 
