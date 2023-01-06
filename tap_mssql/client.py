@@ -92,20 +92,122 @@ class mssqlConnector(SQLConnector):
         implementation inherited from the base class.
         """
         
-        """
-        Checks for the MSSQL type of NUMERIC 
-            if scale = 0 it is typed as a INTEGER
-            if scale != 0 it is typed as NUMBER
-        """
-        if str(sql_type).startswith("NUMERIC"):
-            if str(sql_type).endswith(", 0)"):
-               sql_type = "int"
+        # This is taken from to_jsonschema_type() in typing.py 
+        if isinstance(sql_type, str):
+            sql_type_name = sql_type
+        elif isinstance(sql_type, sqlalchemy.types.TypeEngine):
+            sql_type_name = type(sql_type).__name__
+        elif isinstance(sql_type, type) and issubclass(
+            sql_type, sqlalchemy.types.TypeEngine
+        ):
+            sql_type_name = sql_type.__name__
+        else:
+            raise ValueError("Expected `str` or a SQLAlchemy `TypeEngine` object or type.")
+
+        # Add in the length of the 
+        if sql_type_name in ['CHAR','NCHAR', 'VARCHAR','NVARCHAR']:
+           maxLength:int = getattr(sql_type, 'length')
+
+           if getattr(sql_type, 'length'):
+            return {
+                "type": ["string"],
+                "maxLength": maxLength
+            } 
+
+        # This is a MSSQL only DataType
+        # SQLA does the converion from 0,1
+        # to Python True, False
+        if sql_type_name == 'BIT':
+            return{"type": ["boolean"]}
+
+        # This is a MSSQL only DataType
+        if sql_type_name == 'TINYINT':
+            return {
+                "type": ["integer"],
+                 "minimum": 0,
+                 "maximum": 255
+            }
+
+        if sql_type_name == 'SMALLINT':
+            return {
+                "type": ["integer"], 
+                "minimum": -32768,
+                "maximum": 32767
+            }
+
+        if sql_type_name == 'INTEGER':
+            return {
+                "type": ["integer"],
+                "minimum": -2147483648,
+                "maximum": 2147483647
+            }
+
+        if sql_type_name == 'BIGINT':
+            return {
+                "type": ["integer"], 
+                "minimum": -9223372036854775808,
+                "maximum": 9223372036854775807
+            }
+
+        # Checks for the MSSQL type of NUMERIC 
+        #     if scale = 0 it is typed as a INTEGER
+        #     if scale != 0 it is typed as NUMBER
+        if sql_type_name =="NUMERIC":
+            if getattr(sql_type, 'scale') == 0:
+                precision = getattr(sql_type, 'precision')
+                if precision < 5: 
+                    return {
+                        "type": ["integer"],
+                        "minimum": -32768,
+                        "maximum": 32767
+                    }
+                elif precision < 10: 
+                    return {
+                        "type": ["integer"],
+                        "minimum": -2147483648,
+                        "maximum": 2147483647
+                    }
+                else:
+                    return {
+                        "type": ["integer"], 
+                        "minimum": -9223372036854775808,
+                        "maximum": 9223372036854775807
+                    }    
             else: 
                sql_type = "number"
         
-        if str(sql_type) in ["MONEY", "SMALLMONEY"]:
-            sql_type = "number"
-            
+        # This is a MSSQL only DataType
+        if sql_type_name == "SMALLMONEY":
+             return {
+                "type": ["number"],
+                "minimum": -214748.3648,
+                "maximum": 214748.3647
+            }
+       
+        # This is a MSSQL only DataType
+        # The min and max are getting truncated catalog 
+        if sql_type_name == "MONEY":
+            return {
+                "type": ["number"],
+                "minimum": -922337203685477.5808,
+                "maximum": 922337203685477.5807
+            }
+
+        if sql_type_name == "FLOAT":
+            return {
+                "type": ["number"],
+                "minimum": -1.79e308,
+                "maximum": 1.79e308
+            }
+        
+        if sql_type_name == "REAL":
+            return {
+                "type": ["number"],
+                "minimum": -3.40e38,
+                "maximum": 3.40e38
+            }
+
+    
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
