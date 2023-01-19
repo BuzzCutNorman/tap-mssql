@@ -25,10 +25,15 @@ from singer_sdk.helpers._batch import (
 )
 from singer_sdk.streams.core import lazy_chunked_generator
 
+class mssqlMetadataMapping(MetadataMapping):
+    """Meta data from database to """
+
+
 
 class mssqlConnector(SQLConnector):
     """Connects to the mssql SQL source."""
-    
+    metadatmapping_class = mssqlMetadataMapping
+
     def __init__(self, config: dict | None = None, sqlalchemy_url: str | None = None) -> None:
         """Class Default Init"""
         # If pyodbc given set pyodbc.pooling to False
@@ -198,7 +203,7 @@ class mssqlConnector(SQLConnector):
             schema=Schema.from_dict(schema),
             is_view=is_view,
             replication_method=replication_method,
-            metadata=MetadataMapping.get_standard_metadata(
+            metadata=self.metadatmapping_class.get_standard_metadata(
                 schema_name=schema_name,
                 schema=schema,
                 replication_method=replication_method,
