@@ -8,7 +8,7 @@ import gzip
 import json
 from datetime import datetime
 from uuid import uuid4
-from typing import Any, Dict, Iterable, Optional, cast
+from typing import Any, Dict, Iterable, Optional, cast, Type
 
 import pendulum
 import pyodbc
@@ -18,7 +18,7 @@ from sqlalchemy.engine import Engine, URL
 from sqlalchemy.engine.reflection import Inspector
 
 from singer_sdk import SQLConnector, SQLStream, typing as th
-from singer_sdk._singerlib import CatalogEntry, MetadataMapping, Schema
+from singer_sdk._singerlib import CatalogEntry, MetadataMapping, Schema, StreamMetadata, Metadata
 from singer_sdk.helpers._batch import (
     BaseBatchFileEncoding,
     BatchConfig,
@@ -26,8 +26,55 @@ from singer_sdk.helpers._batch import (
 from singer_sdk.streams.core import lazy_chunked_generator
 
 class mssqlMetadataMapping(MetadataMapping):
-    """Meta data from database to """
+    """Meta data from database to Catalog"""
+    
+    @classmethod
+    def get_standard_metadata(
+        cls: Type[MetadataMapping],
+        schema: dict[str, Any] | None = None,
+        schema_name: str | None = None,
+        key_properties: list[str] | None = None,
+        valid_replication_keys: list[str] | None = None,
+        replication_method: str | None = None,
+    ) -> MetadataMapping:
+        """Get default metadata for a stream.
 
+        Args:
+            schema: Stream schema.
+            schema_name: Stream schema name.
+            key_properties: Stream key properties.
+            valid_replication_keys: Stream valid replication keys.
+            replication_method: Stream replication method.
+
+        Returns:
+            Metadata mapping.
+        """
+        mapping = cls()
+        root = StreamMetadata(
+            table_key_properties=key_properties,
+            forced_replication_method=replication_method,
+            valid_replication_keys=valid_replication_keys,
+        )
+
+        if schema:
+            root.inclusion = Metadata.InclusionType.AVAILABLE
+
+            if schema_name:
+                root.schema_name = schema_name
+
+            for field_name in schema.get("properties", {}).keys():
+                if key_properties and field_name in key_properties:
+                    entry = Metadata(inclusion=Metadata.InclusionType.AUTOMATIC)
+                elif valid_replication_keys and field_name in valid_replication_keys:
+                    entry = Metadata(inclusion=Metadata.InclusionType.AUTOMATIC)
+                else:
+                    entry = Metadata(inclusion=Metadata.InclusionType.AVAILABLE)
+
+                mapping[("properties", field_name)] = entry
+
+        mapping[()] = root
+
+        return mapping
 
 
 class mssqlConnector(SQLConnector):
