@@ -38,14 +38,14 @@ meltano add extractor tap-mssql --variant buzzcutnorman
 
 ## Configuration
 
-The simpliest way to confiure tap-mssql is using the Meltano interactive configuration.
+The simplest way to configure tap-mssql is to use the Meltano interactive configuration.
 
 ```bash
 meltano config tap-mssql set --interactive
 ```
 
 You can quickly set configuration options 1 - 7 this way: 
-1. **dialect:** The Dialect of SQLAlchamey
+1. **dialect:** The Dialect of SQLAlchemy
 2. **driver_type:** The Python Driver you will be using to connect to the SQL server
 3. **host:** The FQDN of the Host serving out the SQL Instance
 4. **port:** The port on which SQL awaiting connection
@@ -62,12 +62,12 @@ When using `pyodbc` sqlalchemy_url_query.driver passes SQLAlchemny the installed
 meltano config target-mssql set sqlalchemy_url_query.driver "ODBC Driver 18 for SQL Server"
 ```
 
-When using `pyodbc` sqlalchemy_url_query.TrustServerCertificate let SQLAlchemy know weather to trust server signed certificates when connecting to SQL Server.
+When using `pyodbc` sqlalchemy_url_query.TrustServerCertificate let SQLAlchemy know whether to trust server signed certificates when connecting to SQL Server.
 ```bash
 meltano config target-mssql set sqlalchemy_url_query.TrustServerCertificate yes
 ```
 
-The `pyodbc` driver has added support for a “fast executemany” mode of execution which greatly reduces round trips.  You can trun the option on or off via by setting `sqlalchemy_eng_params.fast_executemany` to `"True"` or `"False"`
+The `pyodbc` driver has added support for a “fast executemany” mode of execution which greatly reduces round trips.  You can trun the option on or off by setting `sqlalchemy_eng_params.fast_executemany` to `"True"` or `"False"`
 ```bash
 meltano config target-mssql set sqlalchemy_eng_params.fast_executemany "True"
 ```
