@@ -11,7 +11,7 @@ Developer TODO: Update the below as needed to correctly describe the install pro
 ## Installation
 
 ### Prerequisites
-You will need to install the SQL Server Native Driver or ODBC Driver for SQL Server
+You will need to install the SQL Server Native Driver or ODBC Driver for SQL Server if you plan  to use the `driver_type` of `pyodbc`. These drivers are not needed when opting to use `pymssql`.
 
 [Installing Microsoft ODBC Driver for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/windows/system-requirements-installation-and-driver-files?view=sql-server-ver16#installing-microsoft-odbc-driver-for-sql-server)
 <!--
@@ -21,16 +21,56 @@ Install from PyPi:
 pipx install tap-mssql
 ```
 -->
-Install from GitHub:
+### Install from GitHub:
 
 ```bash
 pipx install git+https://github.com/BuzzCutNorman/tap-mssql.git
 ```
 
-Install using [Meltano](https://www.meltano.com) as a [Custom Plugin](https://docs.meltano.com/guide/plugin-management#custom-plugins)
+### Meltano CLI
+
+You can find this tap at [Meltano Hub](https://hub.meltano.com).  Which makes installation a snap.
+
+Add the tap-stackoverflow-sampledata extractor to your project using meltano add :
+```bash
+meltano add extractor tap-mssql --variant buzzcutnorman
+```
 
 ## Configuration
 
+The simpliest way to confiure tap-mssql is using the Meltano interactive configuration.
+
+```bash
+meltano config tap-mssql set --interactive
+```
+
+You can quickly set configuration options 1 - 7 this way: 
+1. **dialect:** The Dialect of SQLAlchamey
+2. **driver_type:** The Python Driver you will be using to connect to the SQL server
+3. **host:** The FQDN of the Host serving out the SQL Instance
+4. **port:** The port on which SQL awaiting connection
+5. **user:** The User Account who has been granted access to the SQL Server
+6. **password:** The Password for the User account
+7. **database:** The Default database for this connection
+
+**WARNING:** Do not attempt setting any other configuration options via interactive.  Doing so has lead to incomplete configurations that fail when the tap is run.
+
+Options 8 - 15 can be setup via `meltano config set`.  Examples for the most commonly needed configurations options are given below.
+
+When using `pyodbc` sqlalchemy_url_query.driver passes SQLAlchemny the installed ODBC driver. 
+```bash
+meltano config target-mssql set sqlalchemy_url_query.driver "ODBC Driver 18 for SQL Server"
+```
+
+When using `pyodbc` sqlalchemy_url_query.TrustServerCertificate let SQLAlchemy know weather to trust server signed certificates when connecting to SQL Server.
+```bash
+meltano config target-mssql set sqlalchemy_url_query.TrustServerCertificate yes
+```
+
+The `pyodbc` driver has added support for a “fast executemany” mode of execution which greatly reduces round trips.  You can trun the option on or off via by setting `sqlalchemy_eng_params.fast_executemany` to `"True"` or `"False"`
+```bash
+meltano config target-mssql set sqlalchemy_eng_params.fast_executemany "True"
+```
 ### Accepted Config Options
 
 <!--
