@@ -55,14 +55,14 @@ You can quickly set configuration options 1 - 7 this way:
 
 **WARNING:** Do not attempt setting any other configuration options via interactive.  Doing so has lead to incomplete configurations that fail when the tap is run.
 
-Options 8 - 15 can be setup via `meltano config set`.  Examples for the most commonly needed configurations options are given below.
+Options 8 - 15 can be setup via `meltano config tap-mssql set`.  Examples for the most commonly needed configurations options are given below.
 
-When using `pyodbc` sqlalchemy_url_query.driver passes SQLAlchemny the installed ODBC driver. 
+When using `pyodbc` `sqlalchemy_url_query.driver` passes SQLAlchemny the installed ODBC driver. 
 ```bash
 meltano config target-mssql set sqlalchemy_url_query.driver "ODBC Driver 18 for SQL Server"
 ```
 
-When using `pyodbc` sqlalchemy_url_query.TrustServerCertificate let SQLAlchemy know whether to trust server signed certificates when connecting to SQL Server.
+When using `pyodbc` `sqlalchemy_url_query.TrustServerCertificate` let SQLAlchemy know whether to trust server signed certificates when connecting to SQL Server.
 ```bash
 meltano config target-mssql set sqlalchemy_url_query.TrustServerCertificate yes
 ```
