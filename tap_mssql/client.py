@@ -94,7 +94,12 @@ class mssqlMetadataMapping(MetadataMapping):
                     if hasattr(field_datatype, attribute):
                         if getattr(field_datatype, attribute):
                             sql_datatyp_string += f"{attribute}={(getattr(field_datatype, attribute))}, "
+                
+                if sql_datatyp_string.endswith(", "):
+                     sql_datatyp_string = sql_datatyp_string[:-2]
+                     
                 sql_datatyp_string += ")"
+
                 mapping[("properties", field_name)] = mssqlMetadata(sql_datatype=sql_datatyp_string)
 
         mapping[()] = root
