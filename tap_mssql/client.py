@@ -8,7 +8,9 @@ import gzip
 import json
 from datetime import datetime
 from uuid import uuid4
-from typing import Any, Dict, Iterable, Optional, cast, Type
+from typing import Any, Dict, Iterable, Optional, cast, Type, Union
+from typing_extensions import TypeAlias
+from dataclasses import dataclass, fields
 
 import pendulum
 import pyodbc
@@ -25,6 +27,16 @@ from singer_sdk.helpers._batch import (
 )
 from singer_sdk.streams.core import lazy_chunked_generator
 
+
+@dataclass
+class mssqlMetadata(StreamMetadata):
+    """MSSQL metadata."""
+
+    sql_datatype: sqlalchemy.types.TypeEngine | None = None
+
+
+AnyMetadata: TypeAlias = Union[Metadata, StreamMetadata, mssqlMetadata]
+
 class mssqlMetadataMapping(MetadataMapping):
     """Meta data from database to Catalog"""
     
@@ -36,6 +48,7 @@ class mssqlMetadataMapping(MetadataMapping):
         key_properties: list[str] | None = None,
         valid_replication_keys: list[str] | None = None,
         replication_method: str | None = None,
+        sql_datatype: dict | None = None,
     ) -> MetadataMapping:
         """Get default metadata for a stream.
 
@@ -71,6 +84,18 @@ class mssqlMetadataMapping(MetadataMapping):
                     entry = Metadata(inclusion=Metadata.InclusionType.AVAILABLE)
 
                 mapping[("properties", field_name)] = entry
+
+            for field_name in schema.get("properties", {}).keys():
+                field_datatype = cast(sqlalchemy.types.TypeEngine,sql_datatype.get(field_name))
+                datatype_attributes = ["length","scale","precision"]
+
+                sql_datatyp_string = f"{type(field_datatype).__name__}("
+                for attribute in datatype_attributes:
+                    if hasattr(field_datatype, attribute):
+                        if getattr(field_datatype, attribute):
+                            sql_datatyp_string += f"{attribute}={(getattr(field_datatype, attribute))}, "
+                sql_datatyp_string += ")"
+                mapping[("properties", field_name)] = mssqlMetadata(sql_datatype=sql_datatyp_string)
 
         mapping[()] = root
 
@@ -231,7 +256,12 @@ class mssqlConnector(SQLConnector):
                 )
             )
         schema = table_schema.to_dict()
+        
+        table_sql_datatype = dict()
+        for column_def in inspected.get_columns(table_name, schema=schema_name):
+            table_sql_datatype[str(column_def["name"])] = column_def["type"]
 
+        self.logger.info(table_sql_datatype)
         # Initialize available replication methods
         addl_replication_methods: list[str] = [""]  # By default an empty list.
         # Notes regarding replication methods:
@@ -256,6 +286,7 @@ class mssqlConnector(SQLConnector):
                 replication_method=replication_method,
                 key_properties=key_properties,
                 valid_replication_keys=None,  # Must be defined by user
+                sql_datatype=table_sql_datatype
             ),
             database=None,  # Expects single-database context
             row_count=None,
