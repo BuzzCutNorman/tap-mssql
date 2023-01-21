@@ -29,13 +29,13 @@ from singer_sdk.streams.core import lazy_chunked_generator
 
 
 @dataclass
-class mssqlMetadata(StreamMetadata):
+class mssqlMetadata(Metadata):
     """MSSQL metadata."""
 
     sql_datatype: sqlalchemy.types.TypeEngine | None = None
 
 
-AnyMetadata: TypeAlias = Union[Metadata, StreamMetadata, mssqlMetadata]
+# AnyMetadata: TypeAlias = Union[Metadata, StreamMetadata, mssqlMetadata]
 
 class mssqlMetadataMapping(MetadataMapping):
     """Meta data from database to Catalog"""
@@ -74,33 +74,33 @@ class mssqlMetadataMapping(MetadataMapping):
 
             if schema_name:
                 root.schema_name = schema_name
-
+        
             for field_name in schema.get("properties", {}).keys():
                 if key_properties and field_name in key_properties:
-                    entry = Metadata(inclusion=Metadata.InclusionType.AUTOMATIC)
+                    entry = mssqlMetadata(inclusion=Metadata.InclusionType.AUTOMATIC)
                 elif valid_replication_keys and field_name in valid_replication_keys:
-                    entry = Metadata(inclusion=Metadata.InclusionType.AUTOMATIC)
+                    entry = mssqlMetadata(inclusion=Metadata.InclusionType.AUTOMATIC)
                 else:
-                    entry = Metadata(inclusion=Metadata.InclusionType.AVAILABLE)
+                    entry = mssqlMetadata(inclusion=Metadata.InclusionType.AVAILABLE)
 
-                mapping[("properties", field_name)] = entry
-
-            for field_name in schema.get("properties", {}).keys():
                 field_datatype = cast(sqlalchemy.types.TypeEngine,sql_datatype.get(field_name))
-                datatype_attributes = ["length","scale","precision"]
+                datatype_attributes = ("length","scale","precision")
 
-                sql_datatyp_string = f"{type(field_datatype).__name__}("
+                sql_datatype_string = f"{type(field_datatype).__name__}("
                 for attribute in datatype_attributes:
                     if hasattr(field_datatype, attribute):
                         if getattr(field_datatype, attribute):
-                            sql_datatyp_string += f"{attribute}={(getattr(field_datatype, attribute))}, "
+                            sql_datatype_string += f"{attribute}={(getattr(field_datatype, attribute))}, "
                 
-                if sql_datatyp_string.endswith(", "):
-                     sql_datatyp_string = sql_datatyp_string[:-2]
+                if sql_datatype_string.endswith(", "):
+                     sql_datatype_string = sql_datatype_string[:-2]
                      
-                sql_datatyp_string += ")"
+                sql_datatype_string += ")"
+                entry.sql_datatype = sql_datatype_string
+                # mapping[("properties", field_name)] = mssqlMetadata(sql_datatype=sql_datatyp_string)
+                
+                mapping[("properties", field_name)] = entry
 
-                mapping[("properties", field_name)] = mssqlMetadata(sql_datatype=sql_datatyp_string)
 
         mapping[()] = root
 
@@ -266,7 +266,7 @@ class mssqlConnector(SQLConnector):
         for column_def in inspected.get_columns(table_name, schema=schema_name):
             table_sql_datatype[str(column_def["name"])] = column_def["type"]
 
-        self.logger.info(table_sql_datatype)
+        # self.logger.info(table_sql_datatype)
         # Initialize available replication methods
         addl_replication_methods: list[str] = [""]  # By default an empty list.
         # Notes regarding replication methods:
