@@ -75,14 +75,43 @@ class mssqlConnector(SQLConnector):
 
         return sqlalchemy.engine_from_config(eng_config, prefix=eng_prefix)
 
-    @staticmethod
-    def to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
+    def to_jsonschema_type(self, sql_type: sqlalchemy.types.TypeEngine) -> None:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
         """
+        if self.config.get('detailed_jsonschema_types',False):
+            return self.exp_to_jsonschema_type(sql_type)
+        else: 
+            return self.org_to_jsonschema_type(sql_type)
+
+    @staticmethod
+    def org_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
+        """Returns a JSON Schema equivalent for the given SQL type.
+
+        Developers may optionally add custom logic before calling the default
+        implementation inherited from the base class.
+        """
+
+        """
+            Checks for the MSSQL type of NUMERIC 
+                if scale = 0 it is typed as a INTEGER
+                if scale != 0 it is typed as NUMBER
+        """
+        if str(sql_type).startswith("NUMERIC"):
+            if str(sql_type).endswith(", 0)"):
+                sql_type = "int"
+            else: 
+                sql_type = "number"
         
+        if str(sql_type) in ["MONEY", "SMALLMONEY"]:
+            sql_type = "number"
+            
+        return SQLConnector.to_jsonschema_type(sql_type)
+
+    @staticmethod
+    def exp_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
         # This is taken from to_jsonschema_type() in typing.py 
         if isinstance(sql_type, str):
             sql_type_name = sql_type
