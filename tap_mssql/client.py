@@ -78,10 +78,27 @@ class mssqlConnector(SQLConnector):
         eng_prefix = "ep."
         eng_config = {f"{eng_prefix}url":self.sqlalchemy_url,f"{eng_prefix}echo":"False"}
 
+        if self.config.get("azure_synapse_dw") and self.config.get('driver_type') == "pymssql":
+            CONN_PROPERTIES = (
+            "SET ARITHABORT ON;"
+            "SET CONCAT_NULL_YIELDS_NULL ON;"
+            "SET ANSI_NULLS ON;"
+            "SET ANSI_NULL_DFLT_ON ON;"
+            "SET ANSI_PADDING ON;"
+            "SET ANSI_WARNINGS ON;"
+            "SET ANSI_NULL_DFLT_ON ON;"
+            "SET QUOTED_IDENTIFIER ON;"
+            "SET TEXTSIZE 2147483647;"
+            )
+            connect_args = {}
+            connect_args['conn_properties']=CONN_PROPERTIES
+            eng_config.update({f"{eng_prefix}connect_args":connect_args})
+        
         if self.config.get('sqlalchemy_eng_params'):
             for key, value in self.config['sqlalchemy_eng_params'].items():
                 eng_config.update({f"{eng_prefix}{key}": value})
 
+        self.logger.info(eng_config)
         return sqlalchemy.engine_from_config(eng_config, prefix=eng_prefix)
 
     @staticmethod

@@ -49,6 +49,12 @@ class Tapmssql(SQLTap):
             description="The Default database for this connection"
         ),
         th.Property(
+            "azure_synapse_dw",
+            th.BooleanType,
+            default=False,
+            description="Test to see if connection_options works for pymssql"
+        ),
+        th.Property(
             "sqlalchemy_eng_params",
             th.ObjectType(
                 th.Property(
