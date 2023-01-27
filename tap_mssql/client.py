@@ -90,8 +90,8 @@ class mssqlConnector(SQLConnector):
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
         """
-        if self.config.get('detailed_jsonschema_types',False):
-            return self.exp_to_jsonschema_type(sql_type)
+        if self.config.get('hd_jsonschema_types',False):
+            return self.hd_to_jsonschema_type(sql_type)
         else: 
             return self.org_to_jsonschema_type(sql_type)
 
@@ -120,7 +120,7 @@ class mssqlConnector(SQLConnector):
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
-    def exp_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
+    def hd_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
         # This is taken from to_jsonschema_type() in typing.py 
         if isinstance(sql_type, str):
             sql_type_name = sql_type
