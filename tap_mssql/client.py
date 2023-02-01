@@ -178,33 +178,28 @@ class mssqlConnector(SQLConnector):
                 "maximum": 9223372036854775807
             }
 
-        # Checks for the MSSQL type of NUMERIC 
+        # Checks for the MSSQL type of NUMERIC and DECIMAL 
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
-        if sql_type_name =="NUMERIC":
-            if getattr(sql_type, 'scale') == 0:
-                precision = getattr(sql_type, 'precision')
-                if precision < 5: 
+        if sql_type_name in ("NUMERIC", "DECMIMAL"):
+            precision = getattr(sql_type, 'precision')
+            scale = getattr(sql_type, 'scale')
+            if scale == 0:
                     return {
                         "type": ["integer"],
-                        "minimum": -32768,
-                        "maximum": 32767
-                    }
-                elif precision < 10: 
-                    return {
-                        "type": ["integer"],
-                        "minimum": -2147483648,
-                        "maximum": 2147483647
-                    }
-                else:
-                    return {
-                        "type": ["integer"], 
-                        "minimum": -9223372036854775808,
-                        "maximum": 9223372036854775807
-                    }    
-            else: 
-               sql_type = "number"
-        
+                        "minimum": (-pow(10,precision))+1,
+                        "maximum": (pow(10,precision))-1
+                    }   
+            else:
+                scale_in_decimal = 1
+                for i in range(scale):
+                    scale_in_decimal = scale_in_decimal/10
+                return {
+                    "type": ["number"],
+                    "minimum": (-pow(10,precision)+1)*scale_in_decimal,
+                    "maximum": (pow(10,precision)-1)*scale_in_decimal
+                } 
+         
         # This is a MSSQL only DataType
         if sql_type_name == "SMALLMONEY":
              return {
