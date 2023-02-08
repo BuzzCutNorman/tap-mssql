@@ -5,7 +5,7 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
-- 2023-02-08 Higher Defined(HD) JSON Schema types:  This is just my interpretation of how to convert some MS SQL data types into JSON Schema definitions.  You can give it a try by setting `hd_jsonschema_types` to `True` in your config.json or meltano.yml
+**2023-02-08 Higher Defined(HD) JSON Schema types:**  This is just my interpretation of how to convert some MS SQL data types into JSON Schema definitions.  You can give it a try by setting `hd_jsonschema_types` to `True` in your config.json or meltano.yml
 
 <!--
 
