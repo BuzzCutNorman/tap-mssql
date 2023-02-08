@@ -123,6 +123,12 @@ class Tapmssql(SQLTap):
             th.DateTimeType,
             description="The earliest record date to sync"
         ),
+        th.Property(
+            "hd_jsonschema_types",
+            th.BooleanType,
+            default=False,
+            description="Turn on Higher Defined(HD) JSON Schema types to assist Targets"
+        ),
     ).to_dict()
 
 
