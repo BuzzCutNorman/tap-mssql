@@ -231,7 +231,6 @@ class mssqlConnector(SQLConnector):
                 "maximum": 3.40e38
             }
 
-    
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
@@ -241,8 +240,7 @@ class mssqlConnector(SQLConnector):
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
         """
-        # Optionally, add custom logic before calling the parent SQLConnector method.
-        # You may delete this method if overrides are not needed.
+
         return SQLConnector.to_sql_type(jsonschema_type)
 
 
@@ -280,10 +278,7 @@ class mssqlStream(SQLStream):
         Yields:
             One dict per record.
         """
-        # Optionally, add custom logic instead of calling the super().
-        # This is helpful if the source database provides batch-optimized record
-        # retrieval.
-        # If no overrides or optimizations are needed, you may delete this method.
+
         yield from super().get_records(partition)
 
     def get_batches(
