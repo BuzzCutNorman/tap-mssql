@@ -1,8 +1,14 @@
 # tap-mssql
 
-`tap-mssql` is a Singer tap for mssql. !!! Warning !!! work in progress. It works ok 😐 for full loads. You can setup a batch_config and generate batch messages.
+`tap-mssql` is a Singer tap for mssql. !!! Warning !!! work in progress. It works ok 😐 for full loads. You can setup a batch_config and generate batch messages. Ok, as long as there are no decimals in the stream 😢. I will be doing a two fingered clap and putting on my thinking cap about that one 🤔.
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
+
+### Whats New 🛳️🎉
+**2023-02-13 Upgraded to Meltano Singer-SDK 0.19.0:** Nothing more need to be said check out what awsome features were gained in these release notes. [0.18.0](https://github.com/meltano/sdk/releases/tag/v0.18.0) and [0.19.0](https://github.com/meltano/sdk/releases/tag/v0.19.0)
+
+
+**2023-02-08 Higher Defined(HD) JSON Schema types:**  This is my interpretation of how to define MS SQL data types using the JSON Schema.  You can give it a try by setting `hd_jsonschema_types` to `True` in your `config.json` or `meltano.yml`.  The buzzcutnorman `target-mssql` is able to translate them back into MS SQL data types.
 
 <!--
 
@@ -97,6 +103,7 @@ tap-mssql --about --format=markdown
 | sqlalchemy_url_query| False    | None    | SQLAlchemy URL Query options: driver, TrustServerCertificate |
 | batch_config        | False    | None    | Optional Batch Message configuration |
 | start_date          | False    | None    | The earliest record date to sync |
+| hd_jsonschema_types | False    |       0 | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
 | stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
