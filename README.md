@@ -1,10 +1,13 @@
 # tap-mssql
 
-`tap-mssql` is a Singer tap for mssql. !!! Warning !!! work in progress. It works ok 😐 for full loads. You can setup a batch_config and generate batch messages.
+`tap-mssql` is a Singer tap for mssql. !!! Warning !!! work in progress. It works ok 😐 for full loads. You can setup a batch_config and generate batch messages. Ok, as long as there are no decimals in the stream 😢. I will be doing a two fingered clap and putting on my thinking cap about that one 🤔.
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-02-13 Upgraded to Meltano Singer-SDK 0.19.0:** Nothing more need to be said check out what awsome features were gained in these release notes. [0.18.0](https://github.com/meltano/sdk/releases/tag/v0.18.0) and [0.19.0](https://github.com/meltano/sdk/releases/tag/v0.19.0)
+
+
 **2023-02-08 Higher Defined(HD) JSON Schema types:**  This is my interpretation of how to define MS SQL data types using the JSON Schema.  You can give it a try by setting `hd_jsonschema_types` to `True` in your `config.json` or `meltano.yml`.  The buzzcutnorman `target-mssql` is able to translate them back into MS SQL data types.
 
 <!--
