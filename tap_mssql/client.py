@@ -8,7 +8,7 @@ import gzip
 import json
 
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 from uuid import uuid4
 from typing import Any, Dict, Iterable, Optional
 
@@ -252,12 +252,13 @@ class CustomJSONEncoder(json.JSONEncoder):
     # Override default() method
     def default(self, obj):
 
-        # Datetime to porper ISO format string
+        # Datetime to proper ISO format
         if isinstance(obj, datetime):
-            # Format datetime - `Fri, 21 Aug 2020 17:59:59 GMT`
-            #obj = obj.strftime('%a, %d %b %Y %H:%M:%S GMT')
-            obj = pendulum.instance(obj).isoformat()
-            return obj
+            return pendulum.instance(obj).isoformat()
+
+        # Date to proper ISO format
+        if isinstance(obj, date):
+            return obj.isoformat()
         
         # JSON Encoder doesn't know Decimals but it
         # does know float so we convert Decimal to float
