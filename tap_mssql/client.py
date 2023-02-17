@@ -6,14 +6,16 @@ from __future__ import annotations
 
 import gzip
 import json
+
+from decimal import Decimal
 from datetime import datetime
 from uuid import uuid4
 from typing import Any, Dict, Iterable, Optional
 
 import pendulum
 import pyodbc
-
 import sqlalchemy
+
 from sqlalchemy.engine import URL
 
 from singer_sdk import SQLConnector, SQLStream
@@ -250,12 +252,17 @@ class CustomJSONEncoder(json.JSONEncoder):
     # Override default() method
     def default(self, obj):
 
-        # Datetime to string
+        # Datetime to porper ISO format string
         if isinstance(obj, datetime):
             # Format datetime - `Fri, 21 Aug 2020 17:59:59 GMT`
             #obj = obj.strftime('%a, %d %b %Y %H:%M:%S GMT')
             obj = pendulum.instance(obj).isoformat()
             return obj
+        
+        # JSON Encoder doesn't know Decimals but it
+        # does know float so we convert Decimal to float
+        if isinstance(obj, Decimal):
+            return float(obj)
 
         # Default behavior for all other types
         return super().default(obj)
