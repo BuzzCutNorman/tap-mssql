@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import gzip
 import json
+import datetime
 
 from decimal import Decimal
-from datetime import datetime, date
 from uuid import uuid4
 from typing import Any, Dict, Iterable, Optional
 
@@ -145,6 +145,12 @@ class mssqlConnector(SQLConnector):
                 "maxLength": maxLength
             } 
 
+        if sql_type_name == 'TIME':
+            return {
+                "type": ["string"],
+                "format": "time"
+            }
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
@@ -253,13 +259,18 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
 
         # Datetime to proper ISO format
-        if isinstance(obj, datetime):
+        if isinstance(obj, datetime.datetime):
             return pendulum.instance(obj).isoformat()
 
         # Date to proper ISO format
-        if isinstance(obj, date):
+        if isinstance(obj, datetime.date):
             return obj.isoformat()
         
+        # Time to proper ISO format cut seconds to pass
+        # json-schema validation
+        if isinstance(obj, datetime.time):
+            return obj.isoformat(timespec='seconds')
+
         # JSON Encoder doesn't know Decimals but it
         # does know float so we convert Decimal to float
         if isinstance(obj, Decimal):
