@@ -258,15 +258,15 @@ class CustomJSONEncoder(json.JSONEncoder):
     # Override default() method
     def default(self, obj):
 
-        # Datetime to proper ISO format
+        # Datetime in ISO format
         if isinstance(obj, datetime.datetime):
             return pendulum.instance(obj).isoformat()
 
-        # Date to proper ISO format
+        # Date in ISO format
         if isinstance(obj, datetime.date):
             return obj.isoformat()
         
-        # Time to proper ISO format cut seconds to pass
+        # Time in ISO format truncated to the second to pass
         # json-schema validation
         if isinstance(obj, datetime.time):
             return obj.isoformat(timespec='seconds')
