@@ -252,8 +252,8 @@ class mssqlConnector(SQLConnector):
         return SQLConnector.to_sql_type(jsonschema_type)
 
 
-# Custom class extends json.JSONEncoder
 class CustomJSONEncoder(json.JSONEncoder):
+    """Custom class extends json.JSONEncoder"""
 
     # Override default() method
     def default(self, obj):
@@ -284,6 +284,7 @@ class mssqlStream(SQLStream):
     """Stream class for mssql streams."""
 
     connector_class = mssqlConnector
+    encoder_class = CustomJSONEncoder
 
     def get_records(self, partition: Optional[dict]) -> Iterable[Dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
@@ -333,7 +334,7 @@ class mssqlStream(SQLStream):
                     # TODO: Determine compression from config.
                     with gzip.GzipFile(fileobj=f, mode="wb") as gz:
                         gz.writelines(
-                            (json.dumps(record, cls=CustomJSONEncoder) + "\n").encode() for record in chunk
+                            (json.dumps(record, cls=self.encoder_class) + "\n").encode() for record in chunk
                         )
                 file_url = fs.geturl(filename)
 
