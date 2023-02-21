@@ -189,7 +189,7 @@ class mssqlConnector(SQLConnector):
         # Checks for the MSSQL type of NUMERIC and DECIMAL 
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
-        if sql_type_name in ("NUMERIC", "DECMIMAL"):
+        if sql_type_name in ("NUMERIC", "DECIMAL"):
             precision = getattr(sql_type, 'precision')
             scale = getattr(sql_type, 'scale')
             if scale == 0:
