@@ -206,15 +206,15 @@ class mssqlConnector(SQLConnector):
                 # scale_in_decimal = float(f"1e-{scale}")
                 # precision_as_number = float(f"1e{precision}") - 1
                 maximum_as_number = str()
-                minimum_as_number = '-'
+                minimum_as_number: str = '-'
                 for i in range(precision):
                     if i == (precision-scale):
                         maximum_as_number += '.'
                     maximum_as_number += '9'
                 minimum_as_number += maximum_as_number
 
-                maximum_scientific_format = '9.'
-                minimum_scientific_format = '-'
+                maximum_scientific_format:str = '9.'
+                minimum_scientific_format:str = '-'
                 for i in range(scale):
                     maximum_scientific_format += '9'
                 maximum_scientific_format += f"e+{precision}"
