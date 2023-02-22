@@ -199,12 +199,6 @@ class mssqlConnector(SQLConnector):
                         "maximum": (pow(10,precision))-1
                     }   
             else:
-                # scale_in_decimal: float = 1
-                # for i in range(scale):
-                #     scale_in_decimal = scale_in_decimal/10
-                # scale_in_decimal = round(scale_in_decimal,scale)
-                # scale_in_decimal = float(f"1e-{scale}")
-                # precision_as_number = float(f"1e{precision}") - 1
                 maximum_as_number = str()
                 minimum_as_number: str = '-'
                 for i in range(precision):
@@ -232,16 +226,6 @@ class mssqlConnector(SQLConnector):
                         "minimum": float(minimum_scientific_format),
                         "maximum": float(maximum_scientific_format)
                     } 
-                # return {
-                #     "type": ["number"],
-                #     # "minimum": round((-pow(10,precision)+1)*scale_in_decimal,scale),
-                #     # "maximum": round((pow(10,precision)-1)*scale_in_decimal,scale)
-                #     # "minimum": -precision_as_number*scale_in_decimal,
-                #     # "maximum": precision_as_number*scale_in_decimal
-                #     "minimum": float(minimum),
-                #     "maximum": float(maximum)
-                    
-                # } 
          
         # This is a MSSQL only DataType
         if sql_type_name == "SMALLMONEY":
