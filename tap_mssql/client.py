@@ -190,8 +190,8 @@ class mssqlConnector(SQLConnector):
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
         if sql_type_name in ("NUMERIC", "DECIMAL"):
-            precision = getattr(sql_type, 'precision')
-            scale = getattr(sql_type, 'scale')
+            precision: int = getattr(sql_type, 'precision')
+            scale: int = getattr(sql_type, 'scale')
             if scale == 0:
                     return {
                         "type": ["integer"],
@@ -199,14 +199,49 @@ class mssqlConnector(SQLConnector):
                         "maximum": (pow(10,precision))-1
                     }   
             else:
-                scale_in_decimal = 1
+                # scale_in_decimal: float = 1
+                # for i in range(scale):
+                #     scale_in_decimal = scale_in_decimal/10
+                # scale_in_decimal = round(scale_in_decimal,scale)
+                # scale_in_decimal = float(f"1e-{scale}")
+                # precision_as_number = float(f"1e{precision}") - 1
+                maximum_as_number = str()
+                minimum_as_number = '-'
+                for i in range(precision):
+                    if i == (precision-scale):
+                        maximum_as_number += '.'
+                    maximum_as_number += '9'
+                minimum_as_number += maximum_as_number
+
+                maximum_scientific_format = '9.'
+                minimum_scientific_format = '-'
                 for i in range(scale):
-                    scale_in_decimal = scale_in_decimal/10
-                return {
-                    "type": ["number"],
-                    "minimum": (-pow(10,precision)+1)*scale_in_decimal,
-                    "maximum": (pow(10,precision)-1)*scale_in_decimal
-                } 
+                    maximum_scientific_format += '9'
+                maximum_scientific_format += f"e+{precision}"
+                minimum_scientific_format += maximum_scientific_format
+
+                if "e+" not in str(float(maximum_as_number)):
+                    return {
+                        "type": ["number"],
+                        "minimum": float(minimum_as_number),
+                        "maximum": float(maximum_as_number)
+                    }
+                else:
+                    return {
+                        "type": ["number"],
+                        "minimum": float(minimum_scientific_format),
+                        "maximum": float(maximum_scientific_format)
+                    } 
+                # return {
+                #     "type": ["number"],
+                #     # "minimum": round((-pow(10,precision)+1)*scale_in_decimal,scale),
+                #     # "maximum": round((pow(10,precision)-1)*scale_in_decimal,scale)
+                #     # "minimum": -precision_as_number*scale_in_decimal,
+                #     # "maximum": precision_as_number*scale_in_decimal
+                #     "minimum": float(minimum),
+                #     "maximum": float(maximum)
+                    
+                # } 
          
         # This is a MSSQL only DataType
         if sql_type_name == "SMALLMONEY":
