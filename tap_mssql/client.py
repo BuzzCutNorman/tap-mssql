@@ -151,6 +151,12 @@ class mssqlConnector(SQLConnector):
                 "format": "time"
             }
 
+        if sql_type_name == 'UNIQUEIDENTIFIER':
+            return {
+                "type": ["string"],
+                "format": "uuid"
+            }
+        
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
