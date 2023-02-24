@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import gzip
 import json
-from datetime import datetime
+import datetime
+
+from decimal import Decimal
 from uuid import uuid4
 from typing import Any, Dict, Iterable, Optional, cast, Type, Union
 from typing_extensions import TypeAlias
@@ -14,7 +16,6 @@ from dataclasses import dataclass, fields
 
 import pendulum
 import pyodbc
-
 import sqlalchemy
 from sqlalchemy.engine import Engine, URL
 from sqlalchemy.engine.reflection import Inspector
@@ -227,6 +228,18 @@ class mssqlConnector(SQLConnector):
                 "maxLength": maxLength
             } 
 
+        if sql_type_name == 'TIME':
+            return {
+                "type": ["string"],
+                "format": "time"
+            }
+
+        if sql_type_name == 'UNIQUEIDENTIFIER':
+            return {
+                "type": ["string"],
+                "format": "uuid"
+            }
+        
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
@@ -265,9 +278,9 @@ class mssqlConnector(SQLConnector):
         # Checks for the MSSQL type of NUMERIC and DECIMAL 
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
-        if sql_type_name in ("NUMERIC", "DECMIMAL"):
-            precision = getattr(sql_type, 'precision')
-            scale = getattr(sql_type, 'scale')
+        if sql_type_name in ("NUMERIC", "DECIMAL"):
+            precision: int = getattr(sql_type, 'precision')
+            scale: int = getattr(sql_type, 'scale')
             if scale == 0:
                     return {
                         "type": ["integer"],
@@ -275,14 +288,33 @@ class mssqlConnector(SQLConnector):
                         "maximum": (pow(10,precision))-1
                     }   
             else:
-                scale_in_decimal = 1
+                maximum_as_number = str()
+                minimum_as_number: str = '-'
+                for i in range(precision):
+                    if i == (precision-scale):
+                        maximum_as_number += '.'
+                    maximum_as_number += '9'
+                minimum_as_number += maximum_as_number
+
+                maximum_scientific_format:str = '9.'
+                minimum_scientific_format:str = '-'
                 for i in range(scale):
-                    scale_in_decimal = scale_in_decimal/10
-                return {
-                    "type": ["number"],
-                    "minimum": (-pow(10,precision)+1)*scale_in_decimal,
-                    "maximum": (pow(10,precision)-1)*scale_in_decimal
-                } 
+                    maximum_scientific_format += '9'
+                maximum_scientific_format += f"e+{precision}"
+                minimum_scientific_format += maximum_scientific_format
+
+                if "e+" not in str(float(maximum_as_number)):
+                    return {
+                        "type": ["number"],
+                        "minimum": float(minimum_as_number),
+                        "maximum": float(maximum_as_number)
+                    }
+                else:
+                    return {
+                        "type": ["number"],
+                        "minimum": float(minimum_scientific_format),
+                        "maximum": float(maximum_scientific_format)
+                    } 
          
         # This is a MSSQL only DataType
         if sql_type_name == "SMALLMONEY":
@@ -423,18 +455,29 @@ class mssqlConnector(SQLConnector):
             replication_key=None,  # Must be defined by user
         )
 
-# Custom class extends json.JSONEncoder
 class CustomJSONEncoder(json.JSONEncoder):
+    """Custom class extends json.JSONEncoder"""
 
     # Override default() method
     def default(self, obj):
 
-        # Datetime to string
-        if isinstance(obj, datetime):
-            # Format datetime - `Fri, 21 Aug 2020 17:59:59 GMT`
-            #obj = obj.strftime('%a, %d %b %Y %H:%M:%S GMT')
-            obj = pendulum.instance(obj).isoformat()
-            return obj
+        # Datetime in ISO format
+        if isinstance(obj, datetime.datetime):
+            return pendulum.instance(obj).isoformat()
+
+        # Date in ISO format
+        if isinstance(obj, datetime.date):
+            return obj.isoformat()
+        
+        # Time in ISO format truncated to the second to pass
+        # json-schema validation
+        if isinstance(obj, datetime.time):
+            return obj.isoformat(timespec='seconds')
+
+        # JSON Encoder doesn't know Decimals but it
+        # does know float so we convert Decimal to float
+        if isinstance(obj, Decimal):
+            return float(obj)
 
         # Default behavior for all other types
         return super().default(obj)
@@ -444,6 +487,7 @@ class mssqlStream(SQLStream):
     """Stream class for mssql streams."""
 
     connector_class = mssqlConnector
+    encoder_class = CustomJSONEncoder
 
     def get_records(self, partition: Optional[dict]) -> Iterable[Dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
@@ -493,7 +537,7 @@ class mssqlStream(SQLStream):
                     # TODO: Determine compression from config.
                     with gzip.GzipFile(fileobj=f, mode="wb") as gz:
                         gz.writelines(
-                            (json.dumps(record, cls=CustomJSONEncoder) + "\n").encode() for record in chunk
+                            (json.dumps(record, cls=self.encoder_class) + "\n").encode() for record in chunk
                         )
                 file_url = fs.geturl(filename)
 
