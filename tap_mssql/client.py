@@ -28,8 +28,12 @@ from singer_sdk.streams.core import lazy_chunked_generator
 
 class mssqlConnector(SQLConnector):
     """Connects to the mssql SQL source."""
-    
-    def __init__(self, config: dict | None = None, sqlalchemy_url: str | None = None) -> None:
+
+    def __init__(
+            self,
+            config: dict | None = None,
+            sqlalchemy_url: str | None = None
+         ) -> None:
         """Class Default Init"""
         # If pyodbc given set pyodbc.pooling to False
         # This allows SQLA to manage to connection pool
@@ -41,7 +45,7 @@ class mssqlConnector(SQLConnector):
     def get_sqlalchemy_url(cls, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
         if config['dialect'] == "mssql":
-            url_drivername:str = config['dialect']
+            url_drivername: str = config['dialect']
         else:
             cls.logger.error("Invalid dialect given")
             exit(1)
@@ -56,16 +60,18 @@ class mssqlConnector(SQLConnector):
             url_drivername,
             config['user'],
             config['password'],
-            host = config['host'],
-            database = config['database']
+            host=config['host'],
+            database=config['database']
         )
 
         if 'port' in config:
             config_url = config_url.set(port=config['port'])
-        
+
         if 'sqlalchemy_url_query' in config:
-            config_url = config_url.update_query_dict(config['sqlalchemy_url_query'])
-        
+            config_url = config_url.update_query_dict(
+                config['sqlalchemy_url_query']
+                )
+
         return (config_url)
 
     def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
@@ -78,7 +84,10 @@ class mssqlConnector(SQLConnector):
             A newly created SQLAlchemy engine object.
         """
         eng_prefix = "ep."
-        eng_config = {f"{eng_prefix}url":self.sqlalchemy_url,f"{eng_prefix}echo":"False"}
+        eng_config = {
+            f"{eng_prefix}url": self.sqlalchemy_url,
+            f"{eng_prefix}echo": "False"
+        }
 
         if self.config.get('sqlalchemy_eng_params'):
             for key, value in self.config['sqlalchemy_eng_params'].items():
@@ -86,15 +95,18 @@ class mssqlConnector(SQLConnector):
 
         return sqlalchemy.engine_from_config(eng_config, prefix=eng_prefix)
 
-    def to_jsonschema_type(self, sql_type: sqlalchemy.types.TypeEngine) -> None:
+    def to_jsonschema_type(
+            self,
+            sql_type: sqlalchemy.types.TypeEngine
+         ) -> None:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
         """
-        if self.config.get('hd_jsonschema_types',False):
+        if self.config.get('hd_jsonschema_types', False):
             return self.hd_to_jsonschema_type(sql_type)
-        else: 
+        else:
             return self.org_to_jsonschema_type(sql_type)
 
     @staticmethod
@@ -106,24 +118,24 @@ class mssqlConnector(SQLConnector):
         """
 
         """
-            Checks for the MSSQL type of NUMERIC 
+            Checks for the MSSQL type of NUMERIC
                 if scale = 0 it is typed as a INTEGER
                 if scale != 0 it is typed as NUMBER
         """
         if str(sql_type).startswith("NUMERIC"):
             if str(sql_type).endswith(", 0)"):
                 sql_type = "int"
-            else: 
+            else:
                 sql_type = "number"
-        
+
         if str(sql_type) in ["MONEY", "SMALLMONEY"]:
             sql_type = "number"
-            
+
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
     def hd_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
-        # This is taken from to_jsonschema_type() in typing.py 
+        # This is taken from to_jsonschema_type() in typing.py
         if isinstance(sql_type, str):
             sql_type_name = sql_type
         elif isinstance(sql_type, sqlalchemy.types.TypeEngine):
@@ -133,17 +145,19 @@ class mssqlConnector(SQLConnector):
         ):
             sql_type_name = sql_type.__name__
         else:
-            raise ValueError("Expected `str` or a SQLAlchemy `TypeEngine` object or type.")
+            raise ValueError(
+                "Expected `str` or a SQLAlchemy `TypeEngine` object or type."
+             )
 
-        # Add in the length of the 
-        if sql_type_name in ['CHAR','NCHAR', 'VARCHAR','NVARCHAR']:
-           maxLength:int = getattr(sql_type, 'length')
+        # Add in the length of the
+        if sql_type_name in ['CHAR', 'NCHAR', 'VARCHAR', 'NVARCHAR']:
+            maxLength: int = getattr(sql_type, 'length')
 
-           if getattr(sql_type, 'length'):
-            return {
-                "type": ["string"],
-                "maxLength": maxLength
-            } 
+            if getattr(sql_type, 'length'):
+                return {
+                    "type": ["string"],
+                    "maxLength": maxLength
+                }
 
         if sql_type_name == 'TIME':
             return {
@@ -156,24 +170,24 @@ class mssqlConnector(SQLConnector):
                 "type": ["string"],
                 "format": "uuid"
             }
-        
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
         if sql_type_name == 'BIT':
-            return{"type": ["boolean"]}
+            return {"type": ["boolean"]}
 
         # This is a MSSQL only DataType
         if sql_type_name == 'TINYINT':
             return {
                 "type": ["integer"],
-                 "minimum": 0,
-                 "maximum": 255
+                "minimum": 0,
+                "maximum": 255
             }
 
         if sql_type_name == 'SMALLINT':
             return {
-                "type": ["integer"], 
+                "type": ["integer"],
                 "minimum": -32768,
                 "maximum": 32767
             }
@@ -187,23 +201,23 @@ class mssqlConnector(SQLConnector):
 
         if sql_type_name == 'BIGINT':
             return {
-                "type": ["integer"], 
+                "type": ["integer"],
                 "minimum": -9223372036854775808,
                 "maximum": 9223372036854775807
             }
 
-        # Checks for the MSSQL type of NUMERIC and DECIMAL 
+        # Checks for the MSSQL type of NUMERIC and DECIMAL
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
         if sql_type_name in ("NUMERIC", "DECIMAL"):
             precision: int = getattr(sql_type, 'precision')
             scale: int = getattr(sql_type, 'scale')
             if scale == 0:
-                    return {
-                        "type": ["integer"],
-                        "minimum": (-pow(10,precision))+1,
-                        "maximum": (pow(10,precision))-1
-                    }   
+                return {
+                    "type": ["integer"],
+                    "minimum": (-pow(10, precision))+1,
+                    "maximum": (pow(10, precision))-1
+                }
             else:
                 maximum_as_number = str()
                 minimum_as_number: str = '-'
@@ -213,8 +227,8 @@ class mssqlConnector(SQLConnector):
                     maximum_as_number += '9'
                 minimum_as_number += maximum_as_number
 
-                maximum_scientific_format:str = '9.'
-                minimum_scientific_format:str = '-'
+                maximum_scientific_format: str = '9.'
+                minimum_scientific_format: str = '-'
                 for i in range(scale):
                     maximum_scientific_format += '9'
                 maximum_scientific_format += f"e+{precision}"
@@ -231,18 +245,18 @@ class mssqlConnector(SQLConnector):
                         "type": ["number"],
                         "minimum": float(minimum_scientific_format),
                         "maximum": float(maximum_scientific_format)
-                    } 
-         
+                    }
+
         # This is a MSSQL only DataType
         if sql_type_name == "SMALLMONEY":
-             return {
+            return {
                 "type": ["number"],
                 "minimum": -214748.3648,
                 "maximum": 214748.3647
             }
-       
+
         # This is a MSSQL only DataType
-        # The min and max are getting truncated catalog 
+        # The min and max are getting truncated catalog
         if sql_type_name == "MONEY":
             return {
                 "type": ["number"],
@@ -256,7 +270,7 @@ class mssqlConnector(SQLConnector):
                 "minimum": -1.79e308,
                 "maximum": 1.79e308
             }
-        
+
         if sql_type_name == "REAL":
             return {
                 "type": ["number"],
@@ -290,7 +304,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         # Date in ISO format
         if isinstance(obj, datetime.date):
             return obj.isoformat()
-        
+
         # Time in ISO format truncated to the second to pass
         # json-schema validation
         if isinstance(obj, datetime.time):
@@ -311,14 +325,17 @@ class mssqlStream(SQLStream):
     connector_class = mssqlConnector
     encoder_class = CustomJSONEncoder
 
-    def get_records(self, partition: Optional[dict]) -> Iterable[Dict[str, Any]]:
+    def get_records(
+            self,
+            partition: Optional[dict]
+         ) -> Iterable[Dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
 
         Args:
-            partition: If provided, will read specifically from this data slice.
+            partition: If provided, will read only from this data slice.
 
         Yields:
             One dict per record.
@@ -327,10 +344,10 @@ class mssqlStream(SQLStream):
         yield from super().get_records(partition)
 
     def get_batches(
-        self,
-        batch_config: BatchConfig,
-        context: dict | None = None,
-        ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
+            self,
+            batch_config: BatchConfig,
+            context: dict | None = None,
+         ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Batch generator function.
 
         Developers are encouraged to override this method to customize batching
