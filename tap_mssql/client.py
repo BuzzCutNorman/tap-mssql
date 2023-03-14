@@ -171,6 +171,20 @@ class mssqlConnector(SQLConnector):
                 "format": "uuid"
             }
 
+        if sql_type_name in ['BINARY', 'IMAGE', 'VARBINARY']:
+            maxLength: int = getattr(sql_type, 'length')
+            if getattr(sql_type, 'length'):
+                return {
+                    "type": ["string"],
+                    "contentEncoding": "base64",
+                    "maxLength": maxLength
+                }
+            else:
+                return {
+                    "type": ["string"],
+                    "contentEncoding": "base64",
+                }
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
