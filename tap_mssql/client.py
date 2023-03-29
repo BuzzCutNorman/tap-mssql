@@ -157,6 +157,12 @@ class mssqlConnector(SQLConnector):
                 "format": "uuid"
             }
         
+        if sql_type_name == 'XML':
+            return {
+                "type": ["string"],
+                "contentMediaType": "application/xml",
+            }
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
