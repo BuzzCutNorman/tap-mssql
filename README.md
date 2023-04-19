@@ -5,12 +5,11 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-04-19 Upgraded to Meltano Singer-SDK 0.24.0**
+
 **2023-02-22 Batch Message Can Handle More Data Types:** You use batch message when a table contains DECIMAL or NUMERIC columns. Plus better batch message support for TIME, DATE, and DATETIME columns.
 
-**2023-02-13 Upgraded to Meltano Singer-SDK 0.19.0:** Nothing more need to be said check out what awsome features were gained in these release notes. [0.18.0](https://github.com/meltano/sdk/releases/tag/v0.18.0) and [0.19.0](https://github.com/meltano/sdk/releases/tag/v0.19.0)
-
-
-**2023-02-08 Higher Defined(HD) JSON Schema types:**  This is my interpretation of how to define MS SQL data types using the JSON Schema.  You can give it a try by setting `hd_jsonschema_types` to `True` in your `config.json` or `meltano.yml`.  The buzzcutnorman `target-mssql` is able to translate them back into MS SQL data types.
+**2023-02-08 Higher Defined(HD) JSON Schema types:**  This is my interpretation of how to define MS SQL data types using the JSON Schema.  You can give it a try by setting `hd_jsonschema_types` to `True` in your `config.json` or `meltano.yml`.  The buzzcutnorman `target-mssql` and `target-postgres` are both able to translate them back into SQL data types.
 
 <!--
 
