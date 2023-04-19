@@ -16,7 +16,8 @@ import pendulum
 import pyodbc
 import sqlalchemy
 
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine.url import URL
 
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import (
@@ -43,7 +44,14 @@ class mssqlConnector(SQLConnector):
         super().__init__(config, sqlalchemy_url)
 
     def get_sqlalchemy_url(cls, config: dict) -> str:
-        """Concatenate a SQLAlchemy URL for use in connecting to the source."""
+        """Return the SQLAlchemy URL string.
+
+        Args:
+            config: A dictionary of settings from the tap or target config.
+
+        Returns:
+            The URL as a string.
+        """
         if config['dialect'] == "mssql":
             url_drivername: str = config['dialect']
         else:
@@ -74,7 +82,7 @@ class mssqlConnector(SQLConnector):
 
         return (config_url)
 
-    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
+    def create_engine(self) -> Engine:
         """Return a new SQLAlchemy engine using the provided config.
 
         Developers can generally override just one of the following:
@@ -97,24 +105,45 @@ class mssqlConnector(SQLConnector):
 
     def to_jsonschema_type(
             self,
-            sql_type: sqlalchemy.types.TypeEngine
-         ) -> None:
+            from_type: str
+            | sqlalchemy.types.TypeEngine
+            | type[sqlalchemy.types.TypeEngine],) -> None:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
+
+        Args:
+            from_type: The SQL type as a string or as a TypeEngine.
+                If a TypeEngine is provided, it may be provided as a class or
+                a specific object instance.
+
+        Returns:
+            A compatible JSON Schema type definition.
         """
         if self.config.get('hd_jsonschema_types', False):
-            return self.hd_to_jsonschema_type(sql_type)
+            return self.hd_to_jsonschema_type(from_type)
         else:
-            return self.org_to_jsonschema_type(sql_type)
+            return self.org_to_jsonschema_type(from_type)
 
     @staticmethod
-    def org_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
+    def org_to_jsonschema_type(
+        from_type: str
+        | sqlalchemy.types.TypeEngine
+        | type[sqlalchemy.types.TypeEngine],
+    ) -> dict:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
+
+        Args:
+            from_type: The SQL type as a string or as a TypeEngine.
+                If a TypeEngine is provided, it may be provided as a class or
+                a specific object instance.
+
+        Returns:
+            A compatible JSON Schema type definition.
         """
 
         """
@@ -122,28 +151,48 @@ class mssqlConnector(SQLConnector):
                 if scale = 0 it is typed as a INTEGER
                 if scale != 0 it is typed as NUMBER
         """
-        if str(sql_type).startswith("NUMERIC"):
-            if str(sql_type).endswith(", 0)"):
-                sql_type = "int"
+        if str(from_type).startswith("NUMERIC"):
+            if str(from_type).endswith(", 0)"):
+                from_type = "int"
             else:
-                sql_type = "number"
+                from_type = "number"
 
-        if str(sql_type) in ["MONEY", "SMALLMONEY"]:
-            sql_type = "number"
+        if str(from_type) in ["MONEY", "SMALLMONEY"]:
+            from_type = "number"
 
-        return SQLConnector.to_jsonschema_type(sql_type)
+        return SQLConnector.to_jsonschema_type(from_type)
 
     @staticmethod
-    def hd_to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
+    def hd_to_jsonschema_type(
+        from_type: str
+        | sqlalchemy.types.TypeEngine
+        | type[sqlalchemy.types.TypeEngine],
+    ) -> dict:
+        """Returns a JSON Schema equivalent for the given SQL type.
+
+        Developers may optionally add custom logic before calling the default
+        implementation inherited from the base class.
+
+        Args:
+            from_type: The SQL type as a string or as a TypeEngine.
+                If a TypeEngine is provided, it may be provided as a class or
+                a specific object instance.
+
+        Raises:
+            ValueError: If the `from_type` value is not of type `str` or `TypeEngine`.
+
+        Returns:
+            A compatible JSON Schema type definition.
+        """
         # This is taken from to_jsonschema_type() in typing.py
-        if isinstance(sql_type, str):
-            sql_type_name = sql_type
-        elif isinstance(sql_type, sqlalchemy.types.TypeEngine):
-            sql_type_name = type(sql_type).__name__
-        elif isinstance(sql_type, type) and issubclass(
-            sql_type, sqlalchemy.types.TypeEngine
+        if isinstance(from_type, str):
+            sql_type_name = from_type
+        elif isinstance(from_type, sqlalchemy.types.TypeEngine):
+            sql_type_name = type(from_type).__name__
+        elif isinstance(from_type, type) and issubclass(
+            from_type, sqlalchemy.types.TypeEngine
         ):
-            sql_type_name = sql_type.__name__
+            sql_type_name = from_type.__name__
         else:
             raise ValueError(
                 "Expected `str` or a SQLAlchemy `TypeEngine` object or type."
@@ -151,9 +200,9 @@ class mssqlConnector(SQLConnector):
 
         # Add in the length of the
         if sql_type_name in ['CHAR', 'NCHAR', 'VARCHAR', 'NVARCHAR']:
-            maxLength: int = getattr(sql_type, 'length')
+            maxLength: int = getattr(from_type, 'length')
 
-            if getattr(sql_type, 'length'):
+            if getattr(from_type, 'length'):
                 return {
                     "type": ["string"],
                     "maxLength": maxLength
@@ -224,8 +273,8 @@ class mssqlConnector(SQLConnector):
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
         if sql_type_name in ("NUMERIC", "DECIMAL"):
-            precision: int = getattr(sql_type, 'precision')
-            scale: int = getattr(sql_type, 'scale')
+            precision: int = getattr(from_type, 'precision')
+            scale: int = getattr(from_type, 'scale')
             if scale == 0:
                 return {
                     "type": ["integer"],
@@ -292,14 +341,24 @@ class mssqlConnector(SQLConnector):
                 "maximum": 3.40e38
             }
 
-        return SQLConnector.to_jsonschema_type(sql_type)
+        return SQLConnector.to_jsonschema_type(from_type)
 
     @staticmethod
     def to_sql_type(jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
-        """Returns a JSON Schema equivalent for the given SQL type.
+        """Return a JSON Schema representation of the provided type.
 
-        Developers may optionally add custom logic before calling the default
-        implementation inherited from the base class.
+        By default will call `typing.to_sql_type()`.
+
+        Developers may override this method to accept additional input
+        argument types, to support non-standard types, or to provide custom
+        typing logic. If overriding this method, developers should call the
+        default implementation from the base class for all unhandled cases.
+
+        Args:
+            jsonschema_type: The JSON Schema representation of the source type.
+
+        Returns:
+            The SQLAlchemy type representation of the data type.
         """
 
         return SQLConnector.to_sql_type(jsonschema_type)
@@ -358,10 +417,10 @@ class mssqlStream(SQLStream):
         yield from super().get_records(partition)
 
     def get_batches(
-            self,
-            batch_config: BatchConfig,
-            context: dict | None = None,
-         ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
+        self,
+        batch_config: BatchConfig,
+        context: dict | None = None,
+    ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Batch generator function.
 
         Developers are encouraged to override this method to customize batching
