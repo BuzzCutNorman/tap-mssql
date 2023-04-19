@@ -81,7 +81,7 @@ class mssqlConnector(SQLConnector):
 
         return (config_url)
 
-    def create_sqlalchemy_engine(self) -> Engine:
+    def create_engine(self) -> Engine:
         """Return a new SQLAlchemy engine using the provided config.
 
         Developers can generally override just one of the following:
@@ -91,7 +91,10 @@ class mssqlConnector(SQLConnector):
             A newly created SQLAlchemy engine object.
         """
         eng_prefix = "ep."
-        eng_config = {f"{eng_prefix}url": self.sqlalchemy_url, f"{eng_prefix}echo": "False"}
+        eng_config = {
+            f"{eng_prefix}url": self.sqlalchemy_url,
+            f"{eng_prefix}echo": "False"
+        }
 
         if self.config.get('sqlalchemy_eng_params'):
             for key, value in self.config['sqlalchemy_eng_params'].items():
