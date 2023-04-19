@@ -1,9 +1,10 @@
 """mssql tap class."""
 
-from typing import List
+from __future__ import annotations
 
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
+
 from tap_mssql.client import mssqlStream
 
 
@@ -58,14 +59,14 @@ class Tapmssql(SQLTap):
             "sqlalchemy_eng_params",
             th.ObjectType(
                 th.Property(
-                "fast_executemany",
-                th.StringType,
-                description="Fast Executemany Mode: True, False"
+                    "fast_executemany",
+                    th.StringType,
+                    description="Fast Executemany Mode: True, False"
                 ),
                 th.Property(
-                "future",
-                th.StringType,
-                description="Run the engine in 2.0 mode: True, False"
+                    "future",
+                    th.StringType,
+                    description="Run the engine in 2.0 mode: True, False"
                 )
             ),
             description="SQLAlchemy Engine Paramaters: fast_executemany, future"
@@ -74,14 +75,14 @@ class Tapmssql(SQLTap):
             "sqlalchemy_url_query",
             th.ObjectType(
                 th.Property(
-                "driver",
-                th.StringType,
-                description="The Driver to use when connection should match the Driver Type"
+                    "driver",
+                    th.StringType,
+                    description="The Driver to use when connection should match the Driver Type"
                 ),
                 th.Property(
-                "TrustServerCertificate",
-                th.StringType,
-                description="This is a Yes No option"
+                    "TrustServerCertificate",
+                    th.StringType,
+                    description="This is a Yes No option"
                 )
             ),
             description="SQLAlchemy URL Query options: driver, TrustServerCertificate"
@@ -89,7 +90,7 @@ class Tapmssql(SQLTap):
         th.Property(
             "batch_config",
             th.ObjectType(
-                th.Property( 
+                th.Property(
                     "encoding",
                     th.ObjectType(
                         th.Property(
@@ -104,7 +105,7 @@ class Tapmssql(SQLTap):
                         )
                     )
                 ),
-                    th.Property(
+                th.Property(
                     "storage",
                     th.ObjectType(
                         th.Property(
