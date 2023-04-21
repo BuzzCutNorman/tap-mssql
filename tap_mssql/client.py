@@ -219,6 +219,12 @@ class mssqlConnector(SQLConnector):
                 "type": ["string"],
                 "format": "uuid"
             }
+        
+        if sql_type_name == 'XML':
+            return {
+                "type": ["string"],
+                "contentMediaType": "application/xml",
+            }
 
         if sql_type_name in ['BINARY', 'IMAGE', 'VARBINARY']:
             maxLength: int = getattr(sql_type, 'length')
