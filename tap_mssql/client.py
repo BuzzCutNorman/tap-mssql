@@ -227,8 +227,8 @@ class mssqlConnector(SQLConnector):
             }
 
         if sql_type_name in ['BINARY', 'IMAGE', 'VARBINARY']:
-            maxLength: int = getattr(sql_type, 'length')
-            if getattr(sql_type, 'length'):
+            maxLength: int = getattr(from_type, 'length')
+            if getattr(from_type, 'length'):
                 return {
                     "type": ["string"],
                     "contentEncoding": "base64",
