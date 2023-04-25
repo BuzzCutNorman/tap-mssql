@@ -438,6 +438,9 @@ class mssqlStream(SQLStream):
         for key, value in record.items():
             # Get the Item/Column property
             property_schema: dict = properties.get(key)
+            # Date in ISO format
+            if isinstance(value, datetime.date):
+                record.update({key: value.isoformat()})
             # Encode base64 binary fields in the record
             if property_schema.get('contentEncoding') == 'base64':
                 record.update({key: b64encode(value)})
