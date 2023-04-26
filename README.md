@@ -5,6 +5,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-04-26 New HD JSON Schema Types:**  XML, IMAGE, BINARY, and VARBINARY types have been give definitions.  This is Thanks🙏 to Singer-SDK 0.24.0 which allows for JSON Schema `contentMediaType` and `contentEncoding`.  Currently all binary data types are Base64 encoded before being sent to a tartget. The buzzcutnorman `target-mssql` and `target-postgres` are both able to translate them back into SQL data types. 
+
 **2023-04-19 Upgraded to Meltano Singer-SDK 0.24.0**
 
 **2023-02-22 Batch Message Can Handle More Data Types:** You use batch message when a table contains DECIMAL or NUMERIC columns. Plus better batch message support for TIME, DATE, and DATETIME columns.
