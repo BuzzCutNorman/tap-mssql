@@ -523,6 +523,26 @@ class mssqlStream(SQLStream):
             # processed.
             query = query.limit(self.ABORT_AT_RECORD_COUNT + 1)
 
+        self.logger.info('\n')
+        self.logger.info(f"Passed context is: {context}")
+        self.logger.info(' ')
+        self.logger.info(f"tap_state is: {self.tap_state}")
+        self.logger.info(' ')
+        self.logger.info(f"stream_state is: {self.stream_state}")
+        self.logger.info(' ')
+        self.logger.info(f"get_context_state is: {self.get_context_state(context)}")
+        self.logger.info(' ')
+        self.logger.info(f"replication_key is type : {type(self.replication_key)} has value: {self.replication_key}")
+        self.logger.info(' ')
+        self.logger.info(f"replication_key_col type: {type(replication_key_col)}, replication_key_col type: {type(replication_key_col)}")
+        self.logger.info(' ')
+        self.logger.info(f"get_starting_replication_key_value is: {self.get_starting_replication_key_value(context)}")
+        self.logger.info(' ')
+        self.logger.info(f"start_val type: {type(start_val)}, start_val type: {type(start_val)}")
+        self.logger.info(' ')
+        self.logger.info(query)
+        self.logger.info('\n')
+
         with self.connector._connect() as conn:
             for record in conn.execute(query):
                 yield dict(record._mapping)
