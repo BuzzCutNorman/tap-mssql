@@ -523,6 +523,7 @@ class mssqlStream(SQLStream):
             # processed.
             query = query.limit(self.ABORT_AT_RECORD_COUNT + 1)
 
+        # remove all below in final #
         self.logger.info('\n')
         self.logger.info(f"Passed context is: {context}")
         self.logger.info(' ')
@@ -534,18 +535,25 @@ class mssqlStream(SQLStream):
         self.logger.info(' ')
         self.logger.info(f"replication_key is type : {type(self.replication_key)} has value: {self.replication_key}")
         self.logger.info(' ')
-        self.logger.info(f"replication_key_col type: {type(replication_key_col)}, replication_key_col type: {type(replication_key_col)}")
-        self.logger.info(' ')
-        self.logger.info(f"get_starting_replication_key_value is: {self.get_starting_replication_key_value(context)}")
-        self.logger.info(' ')
-        self.logger.info(f"start_val type: {type(start_val)}, start_val type: {type(start_val)}")
-        self.logger.info(' ')
+        if self.replication_key:
+            self.logger.info(f"replication_key_col type: {type(replication_key_col)}, replication_key_col type: {type(replication_key_col)}")
+            self.logger.info(' ')
+            self.logger.info(f"get_starting_replication_key_value is: {self.get_starting_replication_key_value(context)}")
+            self.logger.info(' ')
+            self.logger.info(f"start_val type: {type(start_val)}, start_val type: {type(start_val)}")
+            self.logger.info(' ')
         self.logger.info(query)
         self.logger.info('\n')
+        # remove all to here in final #
 
         with self.connector._connect() as conn:
             for record in conn.execute(query):
-                yield dict(record._mapping)
+                # yield dict(record._mapping) #remove in final#
+                transformed_record = self.post_process(dict(record._mapping))
+                if transformed_record is None:
+                    # Record filtered out during post_process()
+                    continue
+                yield transformed_record
 
     def get_batches(
         self,
