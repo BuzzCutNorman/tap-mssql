@@ -506,15 +506,22 @@ class mssqlStream(SQLStream):
         if self.replication_key:
             replication_key_col = table.columns[self.replication_key]
             query = query.order_by(replication_key_col)
+            self.logger.info(f"The replication_key_col SQLA type: {replication_key_col.type}")
+            self.logger.info(f"The replication_key_col python type: {replication_key_col.type.python_type} this is type {type(replication_key_col.type.python_type)}")
+            self.logger.info(f"Is the a replication_key_col python type datetime or date: {(replication_key_col.type.python_type in (datetime.datetime, datetime.date))}")
+            if replication_key_col.type.python_type in (datetime.datetime, datetime.date):
+                self.logger.info("The Replication Key was a datetime or date")
+                start_val = self.get_starting_timestamp(context)
+            else:
+                start_val = self.get_starting_replication_key_value(context)
 
-            start_val = self.get_starting_replication_key_value(context)
             if start_val:
-                query = query.where(
-                    sqlalchemy.text(":replication_key >= :start_val").bindparams(
-                        replication_key=replication_key_col,
-                        start_val=start_val,
-                    ),
-                )
+                query = query.where(replication_key_col >= start_val)
+                    # sqlalchemy.text(":replication_key >= :start_val").bindparams(
+                    #     replication_key=self.replication_key,
+                    #     start_val=start_val,
+                    # ),
+                # )
 
         if self.ABORT_AT_RECORD_COUNT is not None:
             # Limit record count to one greater than the abort threshold. This ensures
@@ -524,6 +531,8 @@ class mssqlStream(SQLStream):
             query = query.limit(self.ABORT_AT_RECORD_COUNT + 1)
 
         # remove all below in final #
+        self.logger.info('\n')
+        self.logger.info(f"Passed context is: {self.schema}")
         self.logger.info('\n')
         self.logger.info(f"Passed context is: {context}")
         self.logger.info(' ')
