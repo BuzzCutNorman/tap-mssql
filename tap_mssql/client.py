@@ -506,11 +506,12 @@ class mssqlStream(SQLStream):
         if self.replication_key:
             replication_key_col = table.columns[self.replication_key]
             query = query.order_by(replication_key_col)
+            # remove all below in final #
             self.logger.info(f"The replication_key_col SQLA type: {replication_key_col.type}")
             self.logger.info(f"The replication_key_col python type: {replication_key_col.type.python_type} this is type {type(replication_key_col.type.python_type)}")
             self.logger.info(f"Is the a replication_key_col python type datetime or date: {(replication_key_col.type.python_type in (datetime.datetime, datetime.date))}")
+            # remove all to here in final #
             if replication_key_col.type.python_type in (datetime.datetime, datetime.date):
-                self.logger.info("The Replication Key was a datetime or date")
                 start_val = self.get_starting_timestamp(context)
             else:
                 start_val = self.get_starting_replication_key_value(context)
