@@ -447,32 +447,6 @@ class mssqlStream(SQLStream):
 
         return record
 
-    # def get_records(
-    #         self,
-    #         partition: Optional[dict]
-    #      ) -> Iterable[Dict[str, Any]]:
-    #     """Return a generator of record-type dictionary objects.
-
-    #     Developers may optionally add custom logic before calling the default
-    #     implementation inherited from the base class.
-
-    #     Args:
-    #         partition: If provided, will read only from this data slice.
-
-    #     Yields:
-    #         One dict per record.
-    #     """
-    #     # I took some of the get_records from the rest.py and added it
-    #     # here so I can edit the records in the post_process method
-    #     # before they are sent to the tap.
-    #     for record in super().get_records(partition):
-    #         transformed_record = self.post_process(record)
-    #         if transformed_record is None:
-    #             # Record filtered out during post_process()
-    #             continue
-    #         yield transformed_record
-    #     # yield from super().get_records(partition)
-
     def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
 
@@ -522,11 +496,6 @@ class mssqlStream(SQLStream):
 
             if start_val:
                 query = query.where(replication_key_col >= start_val)
-                    # sqlalchemy.text(":replication_key >= :start_val").bindparams(
-                    #     replication_key=self.replication_key,
-                    #     start_val=start_val,
-                    # ),
-                # )
 
         if self.ABORT_AT_RECORD_COUNT is not None:
             # Limit record count to one greater than the abort threshold. This ensures
@@ -560,7 +529,6 @@ class mssqlStream(SQLStream):
 
         with self.connector._connect() as conn:
             for record in conn.execute(query):
-                # yield dict(record._mapping) #remove in final#
                 transformed_record = self.post_process(dict(record._mapping))
                 if transformed_record is None:
                     # Record filtered out during post_process()
