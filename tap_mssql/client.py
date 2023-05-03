@@ -450,20 +450,21 @@ class mssqlStream(SQLStream):
     def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
 
-        If the stream has a replication_key value defined, records will be sorted by the
-        incremental key. If the stream also has an available starting bookmark, the
-        records will be filtered for values greater than or equal to the bookmark value.
+        If the stream has a replication_key value defined, records will be
+        sorted by the incremental key. If the stream also has an available
+        starting bookmark, the records will be filtered for values greater
+        than or equal to the bookmark value.
 
         Args:
-            context: If partition context is provided, will read specifically from this
-                data slice.
+            context: If partition context is provided, will read specifically
+                from this data slice.
 
         Yields:
             One dict per record.
 
         Raises:
-            NotImplementedError: If partition is passed in context and the stream does
-                not support partitioning.
+            NotImplementedError: If partition is passed in context and the
+                stream does not support partitioning.
         """
         if context:
             raise NotImplementedError(
@@ -489,7 +490,10 @@ class mssqlStream(SQLStream):
             # self.logger.info(f"Is the a replication_key_col python type datetime or date: {(replication_key_col.type.python_type in (datetime.datetime, datetime.date))}")
             # self.logger.info('\n')
             # # remove all to here in final #
-            if replication_key_col.type.python_type in (datetime.datetime, datetime.date):
+            if replication_key_col.type.python_type in (
+                datetime.datetime,
+                datetime.date
+            ):
                 start_val = self.get_starting_timestamp(context)
             else:
                 start_val = self.get_starting_replication_key_value(context)
@@ -498,10 +502,11 @@ class mssqlStream(SQLStream):
                 query = query.where(replication_key_col >= start_val)
 
         if self.ABORT_AT_RECORD_COUNT is not None:
-            # Limit record count to one greater than the abort threshold. This ensures
+            # Limit record count to one greater than the abort threshold.
+            # This ensures
             # `MaxRecordsLimitException` exception is properly raised by caller
-            # `Stream._sync_records()` if more records are available than can be
-            # processed.
+            # `Stream._sync_records()` if more records are available than can
+            #  be processed.
             query = query.limit(self.ABORT_AT_RECORD_COUNT + 1)
 
         # # remove all below in final #
