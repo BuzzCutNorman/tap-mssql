@@ -447,31 +447,98 @@ class mssqlStream(SQLStream):
 
         return record
 
-    def get_records(
-            self,
-            partition: Optional[dict]
-         ) -> Iterable[Dict[str, Any]]:
+    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
 
-        Developers may optionally add custom logic before calling the default
-        implementation inherited from the base class.
+        If the stream has a replication_key value defined, records will be
+        sorted by the incremental key. If the stream also has an available
+        starting bookmark, the records will be filtered for values greater
+        than or equal to the bookmark value.
 
         Args:
-            partition: If provided, will read only from this data slice.
+            context: If partition context is provided, will read specifically
+                from this data slice.
 
         Yields:
             One dict per record.
+
+        Raises:
+            NotImplementedError: If partition is passed in context and the
+                stream does not support partitioning.
         """
-        # I took some of the get_records from the rest.py and added it
-        # here so I can edit the records in the post_process method
-        # before they are sent to the tap.
-        for record in super().get_records(partition):
-            transformed_record = self.post_process(record)
-            if transformed_record is None:
-                # Record filtered out during post_process()
-                continue
-            yield transformed_record
-        # yield from super().get_records(partition)
+        if context:
+            raise NotImplementedError(
+                f"Stream '{self.name}' does not support partitioning.",
+            )
+
+        selected_column_names = self.get_selected_schema()["properties"].keys()
+        table = self.connector.get_table(
+            full_table_name=self.fully_qualified_name,
+            column_names=selected_column_names,
+        )
+        query = table.select()
+
+        if self.replication_key:
+            replication_key_col = table.columns[self.replication_key]
+            query = query.order_by(replication_key_col)
+            # # remove all below in final #
+            # self.logger.info('\n')
+            # self.logger.info(f"The replication_key_col SQLA type: {replication_key_col.type}")
+            # self.logger.info(' ')
+            # self.logger.info(f"The replication_key_col python type: {replication_key_col.type.python_type} this is type {type(replication_key_col.type.python_type)}")
+            # self.logger.info(' ')
+            # self.logger.info(f"Is the a replication_key_col python type datetime or date: {(replication_key_col.type.python_type in (datetime.datetime, datetime.date))}")
+            # self.logger.info('\n')
+            # # remove all to here in final #
+            if replication_key_col.type.python_type in (
+                datetime.datetime,
+                datetime.date
+            ):
+                start_val = self.get_starting_timestamp(context)
+            else:
+                start_val = self.get_starting_replication_key_value(context)
+
+            if start_val:
+                query = query.where(replication_key_col >= start_val)
+
+        if self.ABORT_AT_RECORD_COUNT is not None:
+            # Limit record count to one greater than the abort threshold.
+            # This ensures
+            # `MaxRecordsLimitException` exception is properly raised by caller
+            # `Stream._sync_records()` if more records are available than can
+            #  be processed.
+            query = query.limit(self.ABORT_AT_RECORD_COUNT + 1)
+
+        # # remove all below in final #
+        # self.logger.info('\n')
+        # self.logger.info(f"Passed context is: {context}")
+        # self.logger.info(' ')
+        # self.logger.info(f"tap_state is: {self.tap_state}")
+        # self.logger.info(' ')
+        # self.logger.info(f"stream_state is: {self.stream_state}")
+        # self.logger.info(' ')
+        # self.logger.info(f"get_context_state is: {self.get_context_state(context)}")
+        # self.logger.info(' ')
+        # self.logger.info(f"replication_key is type : {type(self.replication_key)} has value: {self.replication_key}")
+        # self.logger.info(' ')
+        # if self.replication_key:
+        #     self.logger.info(f"replication_key_col type: {type(replication_key_col)}, replication_key_col type: {type(replication_key_col)}")
+        #     self.logger.info(' ')
+        #     self.logger.info(f"get_starting_replication_key_value is: {self.get_starting_replication_key_value(context)}")
+        #     self.logger.info(' ')
+        #     self.logger.info(f"start_val type: {type(start_val)}, start_val type: {type(start_val)}")
+        #     self.logger.info(' ')
+        # self.logger.info(query)
+        # self.logger.info('\n')
+        # # remove all to here in final #
+
+        with self.connector._connect() as conn:
+            for record in conn.execute(query):
+                transformed_record = self.post_process(dict(record._mapping))
+                if transformed_record is None:
+                    # Record filtered out during post_process()
+                    continue
+                yield transformed_record
 
     def get_batches(
         self,
