@@ -443,7 +443,7 @@ class mssqlStream(SQLStream):
                 record.update({key: value.isoformat()})
             # Encode base64 binary fields in the record
             if property_schema.get('contentEncoding') == 'base64':
-                record.update({key: b64encode(value)})
+                record.update({key: b64encode(value).decode()})
 
         return record
 
