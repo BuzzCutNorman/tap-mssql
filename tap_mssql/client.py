@@ -11,12 +11,18 @@ import datetime
 from base64 import b64encode
 from decimal import Decimal
 from uuid import uuid4
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Iterable, Optional, cast, Type, Union
+from typing_extensions import TypeAlias
+from dataclasses import dataclass, fields
 
 import pendulum
 import pyodbc
 import sqlalchemy
+from sqlalchemy.engine import Engine, URL
+from sqlalchemy.engine.reflection import Inspector
 
+from singer_sdk import SQLConnector, SQLStream, typing as th
+from singer_sdk._singerlib import CatalogEntry, MetadataMapping, Schema, StreamMetadata, Metadata
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import URL
 
@@ -28,8 +34,88 @@ from singer_sdk.helpers._batch import (
 from singer_sdk.streams.core import lazy_chunked_generator
 
 
+@dataclass
+class mssqlMetadata(Metadata):
+    """MSSQL metadata."""
+
+    sql_datatype: sqlalchemy.types.TypeEngine | None = None
+
+
+# AnyMetadata: TypeAlias = Union[Metadata, StreamMetadata, mssqlMetadata]
+
+class mssqlMetadataMapping(MetadataMapping):
+    """Meta data from database to Catalog"""
+    
+    @classmethod
+    def get_standard_metadata(
+        cls: Type[MetadataMapping],
+        schema: dict[str, Any] | None = None,
+        schema_name: str | None = None,
+        key_properties: list[str] | None = None,
+        valid_replication_keys: list[str] | None = None,
+        replication_method: str | None = None,
+        sql_datatype: dict | None = None,
+    ) -> MetadataMapping:
+        """Get default metadata for a stream.
+
+        Args:
+            schema: Stream schema.
+            schema_name: Stream schema name.
+            key_properties: Stream key properties.
+            valid_replication_keys: Stream valid replication keys.
+            replication_method: Stream replication method.
+
+        Returns:
+            Metadata mapping.
+        """
+        mapping = cls()
+        root = StreamMetadata(
+            table_key_properties=key_properties,
+            forced_replication_method=replication_method,
+            valid_replication_keys=valid_replication_keys,
+        )
+
+        if schema:
+            root.inclusion = Metadata.InclusionType.AVAILABLE
+
+            if schema_name:
+                root.schema_name = schema_name
+        
+            for field_name in schema.get("properties", {}).keys():
+                if key_properties and field_name in key_properties:
+                    entry = mssqlMetadata(inclusion=Metadata.InclusionType.AUTOMATIC)
+                elif valid_replication_keys and field_name in valid_replication_keys:
+                    entry = mssqlMetadata(inclusion=Metadata.InclusionType.AUTOMATIC)
+                else:
+                    entry = mssqlMetadata(inclusion=Metadata.InclusionType.AVAILABLE)
+
+                field_datatype = cast(sqlalchemy.types.TypeEngine,sql_datatype.get(field_name))
+                datatype_attributes = ("length","scale","precision")
+
+                sql_datatype_string = f"{type(field_datatype).__name__}("
+                for attribute in datatype_attributes:
+                    if hasattr(field_datatype, attribute):
+                        if getattr(field_datatype, attribute):
+                            sql_datatype_string += f"{attribute}={(getattr(field_datatype, attribute))}, "
+                
+                if sql_datatype_string.endswith(", "):
+                     sql_datatype_string = sql_datatype_string[:-2]
+                     
+                sql_datatype_string += ")"
+                entry.sql_datatype = sql_datatype_string
+                # mapping[("properties", field_name)] = mssqlMetadata(sql_datatype=sql_datatyp_string)
+                
+                mapping[("properties", field_name)] = entry
+
+
+        mapping[()] = root
+
+        return mapping
+
+
 class mssqlConnector(SQLConnector):
     """Connects to the mssql SQL source."""
+    metadatmapping_class = mssqlMetadataMapping
 
     def __init__(
             self,
@@ -370,6 +456,101 @@ class mssqlConnector(SQLConnector):
 
         return SQLConnector.to_sql_type(jsonschema_type)
 
+    def discover_catalog_entry(
+        self,
+        engine: Engine,
+        inspected: Inspector,
+        schema_name: str,
+        table_name: str,
+        is_view: bool,
+    ) -> CatalogEntry:
+        """Create `CatalogEntry` object for the given table or a view.
+
+        Args:
+            engine: SQLAlchemy engine
+            inspected: SQLAlchemy inspector instance for engine
+            schema_name: Schema name to inspect
+            table_name: Name of the table or a view
+            is_view: Flag whether this object is a view, returned by `get_object_names`
+
+        Returns:
+            `CatalogEntry` object for the given table or a view
+        """
+        # Initialize unique stream name
+        unique_stream_id = self.get_fully_qualified_name(
+            db_name=None,
+            schema_name=schema_name,
+            table_name=table_name,
+            delimiter="-",
+        )
+
+        # Detect key properties
+        possible_primary_keys: list[list[str]] = []
+        pk_def = inspected.get_pk_constraint(table_name, schema=schema_name)
+        if pk_def and "constrained_columns" in pk_def:
+            possible_primary_keys.append(pk_def["constrained_columns"])
+
+        possible_primary_keys.extend(
+            index_def["column_names"]
+            for index_def in inspected.get_indexes(table_name, schema=schema_name)
+            if index_def.get("unique", False)
+        )
+
+        key_properties = next(iter(possible_primary_keys), None)
+
+        # Initialize columns list
+        table_schema = th.PropertiesList()
+        for column_def in inspected.get_columns(table_name, schema=schema_name):
+            column_name = column_def["name"]
+            is_nullable = column_def.get("nullable", False)
+            jsonschema_type: dict = self.to_jsonschema_type(
+                cast(sqlalchemy.types.TypeEngine, column_def["type"])
+            )
+            table_schema.append(
+                th.Property(
+                    name=column_name,
+                    wrapped=th.CustomType(jsonschema_type),
+                    required=not is_nullable,
+                )
+            )
+        schema = table_schema.to_dict()
+        
+        table_sql_datatype = dict()
+        for column_def in inspected.get_columns(table_name, schema=schema_name):
+            table_sql_datatype[str(column_def["name"])] = column_def["type"]
+
+        # self.logger.info(table_sql_datatype)
+        # Initialize available replication methods
+        addl_replication_methods: list[str] = [""]  # By default an empty list.
+        # Notes regarding replication methods:
+        # - 'INCREMENTAL' replication must be enabled by the user by specifying
+        #   a replication_key value.
+        # - 'LOG_BASED' replication must be enabled by the developer, according
+        #   to source-specific implementation capabilities.
+        replication_method = next(reversed(["FULL_TABLE"] + addl_replication_methods))
+
+        # Create the catalog entry object
+        return CatalogEntry(
+            tap_stream_id=unique_stream_id,
+            stream=unique_stream_id,
+            table=table_name,
+            key_properties=key_properties,
+            schema=Schema.from_dict(schema),
+            is_view=is_view,
+            replication_method=replication_method,
+            metadata=self.metadatmapping_class.get_standard_metadata(
+                schema_name=schema_name,
+                schema=schema,
+                replication_method=replication_method,
+                key_properties=key_properties,
+                valid_replication_keys=None,  # Must be defined by user
+                sql_datatype=table_sql_datatype
+            ),
+            database=None,  # Expects single-database context
+            row_count=None,
+            stream_alias=None,
+            replication_key=None,  # Must be defined by user
+        )
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom class extends json.JSONEncoder"""
