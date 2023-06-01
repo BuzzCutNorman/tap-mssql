@@ -11,7 +11,7 @@ import datetime
 from base64 import b64encode
 from decimal import Decimal
 from uuid import uuid4
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Iterable
 
 import pendulum
 import pyodbc
@@ -220,7 +220,7 @@ class mssqlConnector(SQLConnector):
                 "type": ["string"],
                 "format": "uuid"
             }
-        
+
         if sql_type_name == 'XML':
             return {
                 "type": ["string"],
