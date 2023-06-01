@@ -25,7 +25,7 @@ from singer_sdk.helpers._batch import (
     BaseBatchFileEncoding,
     BatchConfig,
 )
-from singer_sdk.streams.core import lazy_chunked_generator
+from singer_sdk.batch import lazy_chunked_generator
 
 
 class mssqlConnector(SQLConnector):
