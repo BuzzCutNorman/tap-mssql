@@ -6,11 +6,11 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-06-05 Upgraded to Meltano Singer-SDK 0.27.0:**
+
 **2023-05-03 Incremental Replication:**  Equipped with the Singer-SDK documentation on how to implement Incremental Replication and davert0 issue filled with great details I headed off on a coding adventure.  There were twists, turns, and backtracking but in the end you can now setup Incremental Replication and it might work.  If you are using Meltano here is the documentation to follow to setup [Key-based Incremental Replication ](https://docs.meltano.com/guide/integration#key-based-incremental-replication) and manage [Incremental Replication State](https://docs.meltano.com/guide/integration#incremental-replication-state). Skim over the documentation and head off on you own Incremental Replication adventure.
 
 **2023-04-26 New HD JSON Schema Types:**  XML, IMAGE, BINARY, and VARBINARY types have been give definitions.  This is Thanks🙏 to Singer-SDK 0.24.0 which allows for JSON Schema `contentMediaType` and `contentEncoding`.  Currently all binary data types are Base64 encoded before being sent to a tartget. The buzzcutnorman `target-mssql` and `target-postgres` are both able to translate them back into SQL data types. 
-
-**2023-04-19 Upgraded to Meltano Singer-SDK 0.24.0**
 
 **2023-02-22 Batch Message Can Handle More Data Types:** You use batch message when a table contains DECIMAL or NUMERIC columns. Plus better batch message support for TIME, DATE, and DATETIME columns.
 
