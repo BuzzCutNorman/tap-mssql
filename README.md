@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-06-14 Enhancement:**  The behavior of when a new mssqlConnector class is generated has been changed.  When the Tap discovers the database and also initializes Streams a Tap level connector is generated and passed on to Streams.  This mean instead of a database session per Stream there is a smaller pool of session being utilized over and over. You can use sp_who to see how may sessions are active.  I couldn't have added this without the SQLConnector refactoring work @qbatten did in SDK 0.20.0.  The inspiration for this feature came from comments made by @kgpayne. So a big Thanks 🙏 to both of them.
+
 **2023-06-05 Upgraded to Meltano Singer-SDK 0.27.0:**
 
 **2023-05-03 Incremental Replication:**  Equipped with the Singer-SDK documentation on how to implement Incremental Replication and davert0 issue filled with great details I headed off on a coding adventure.  There were twists, turns, and backtracking but in the end you can now setup Incremental Replication and it might work.  If you are using Meltano here is the documentation to follow to setup [Key-based Incremental Replication ](https://docs.meltano.com/guide/integration#key-based-incremental-replication) and manage [Incremental Replication State](https://docs.meltano.com/guide/integration#incremental-replication-state). Skim over the documentation and head off on you own Incremental Replication adventure.
