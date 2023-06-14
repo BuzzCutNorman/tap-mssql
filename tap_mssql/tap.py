@@ -2,16 +2,51 @@
 
 from __future__ import annotations
 
-from singer_sdk import SQLTap
+from singer_sdk import SQLTap, SQLStream, SQLConnector
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_mssql.client import mssqlStream
+from tap_mssql.client import mssqlStream, mssqlConnector
 
 
 class Tapmssql(SQLTap):
     """mssql tap class."""
+
     name = "tap-mssql"
     default_stream_class = mssqlStream
+    default_connector_class = mssqlConnector
+    _tap_connector: SQLConnector = None
+
+    @property
+    def tap_connector(self) -> SQLConnector:
+        """The connector object.
+
+        Returns:
+            The connector object.
+        """
+        if self._tap_connector is None:
+            self._tap_connector = self.default_connector_class(dict(self.config))
+        return self._tap_connector
+    
+    @property
+    def catalog_dict(self) -> dict:
+        """Get catalog dictionary.
+
+        Returns:
+            The tap's catalog as a dict
+        """
+        if self._catalog_dict:
+            return self._catalog_dict
+
+        if self.input_catalog:
+            return self.input_catalog.to_dict()
+
+        connector = self.tap_connector
+
+        result: dict[str, list[dict]] = {"streams": []}
+        result["streams"].extend(connector.discover_catalog_entries())
+
+        self._catalog_dict = result
+        return self._catalog_dict
 
     config_jsonschema = th.PropertiesList(
         th.Property(
@@ -132,6 +167,23 @@ class Tapmssql(SQLTap):
         ),
     ).to_dict()
 
+    def discover_streams(self) -> list[SQLStream]:
+        """Initialize all available streams and return them as a list.
+
+        Returns:
+            List of discovered Stream objects.
+        """
+        result: list[SQLStream] = []
+        for catalog_entry in self.catalog_dict["streams"]:
+            result.append(
+                self.default_stream_class(
+                    tap=self,
+                    catalog_entry=catalog_entry,
+                    connector=self.tap_connector
+                )
+            )
+
+        return result
 
 if __name__ == "__main__":
     Tapmssql.cli()
