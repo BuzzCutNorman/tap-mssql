@@ -161,6 +161,12 @@ class mssqlConnector(SQLConnector):
         if str(from_type) in ["MONEY", "SMALLMONEY"]:
             from_type = "number"
 
+        # This is a MSSQL only DataType
+        # SQLA does the converion from 0,1
+        # to Python True, False
+        if str(from_type) in ['BIT']:
+            from_type = "bool"
+        
         return SQLConnector.to_jsonschema_type(from_type)
 
     @staticmethod
@@ -446,7 +452,7 @@ class mssqlStream(SQLStream):
                 if property_schema.get('contentEncoding') == 'base64':
                     record.update({key: b64encode(value).decode()})
 
-        return record
+        return super().post_process(record)
 
     def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
