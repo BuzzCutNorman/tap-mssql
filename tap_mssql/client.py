@@ -452,7 +452,7 @@ class mssqlStream(SQLStream):
                 if property_schema.get('contentEncoding') == 'base64':
                     record.update({key: b64encode(value).decode()})
 
-        return super().post_process(record)
+        return record
 
     def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
