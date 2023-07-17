@@ -11,7 +11,7 @@ import datetime
 from base64 import b64encode
 from decimal import Decimal
 from uuid import uuid4
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator
 
 import pendulum
 import pyodbc
@@ -21,11 +21,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import URL
 
 from singer_sdk import SQLConnector, SQLStream
-from singer_sdk.helpers._batch import (
-    BaseBatchFileEncoding,
-    BatchConfig,
-)
-from singer_sdk.batch import lazy_chunked_generator
+from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 
 
 class mssqlConnector(SQLConnector):
@@ -400,16 +396,56 @@ class CustomJSONEncoder(json.JSONEncoder):
         # does know float so we convert Decimal to float
         if isinstance(obj, Decimal):
             return float(obj)
-
+        
         # Default behavior for all other types
         return super().default(obj)
+
+class JSONLinesBatcher(BaseBatcher):
+    """JSON Lines Record Batcher."""
+
+    encoder_class = CustomJSONEncoder
+
+    def get_batches(
+        self,
+        records: Iterator[dict],
+    ) -> Iterator[list[str]]:
+        """Yield manifest of batches.
+
+        Args:
+            records: The records to batch.
+
+        Yields:
+            A list of file paths (called a manifest).
+        """
+        sync_id = f"{self.tap_name}--{self.stream_name}-{uuid4()}"
+        prefix = self.batch_config.storage.prefix or ""
+
+        for i, chunk in enumerate(
+            lazy_chunked_generator(
+                records,
+                self.batch_config.batch_size,
+            ),
+            start=1,
+        ):
+            filename = f"{prefix}{sync_id}-{i}.json.gz"
+            with self.batch_config.storage.fs(create=True) as fs:
+                # TODO: Determine compression from config.
+                with fs.open(filename, "wb") as f, gzip.GzipFile(
+                    fileobj=f,
+                    mode="wb",
+                ) as gz:
+                    gz.writelines(
+                        (json.dumps(record, cls=self.encoder_class, default=str) + "\n").encode()
+                        for record in chunk
+                    )
+                file_url = fs.geturl(filename)
+            yield [file_url]
 
 
 class mssqlStream(SQLStream):
     """Stream class for mssql streams."""
 
     connector_class = mssqlConnector
-    encoder_class = CustomJSONEncoder
 
     def post_process(
         self,
@@ -547,41 +583,3 @@ class mssqlStream(SQLStream):
                     continue
                 yield transformed_record
 
-    def get_batches(
-        self,
-        batch_config: BatchConfig,
-        context: dict | None = None,
-    ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
-        """Batch generator function.
-
-        Developers are encouraged to override this method to customize batching
-        behavior for databases, bulk APIs, etc.
-
-        Args:
-            batch_config: Batch config for this stream.
-            context: Stream partition or context dictionary.
-
-        Yields:
-            A tuple of (encoding, manifest) for each batch.
-        """
-        sync_id = f"{self.tap_name}--{self.name}-{uuid4()}"
-        prefix = batch_config.storage.prefix or ""
-
-        for i, chunk in enumerate(
-            lazy_chunked_generator(
-                self._sync_records(context, write_messages=False),
-                self.batch_size,
-            ),
-            start=1,
-        ):
-            filename = f"{prefix}{sync_id}-{i}.json.gz"
-            with batch_config.storage.fs() as fs:
-                with fs.open(filename, "wb") as f:
-                    # TODO: Determine compression from config.
-                    with gzip.GzipFile(fileobj=f, mode="wb") as gz:
-                        gz.writelines(
-                            (json.dumps(record, cls=self.encoder_class) + "\n").encode() for record in chunk
-                        )
-                file_url = fs.geturl(filename)
-
-            yield batch_config.encoding, [file_url]
