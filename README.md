@@ -98,24 +98,24 @@ tap-mssql --about --format=markdown
 -->
 
 
-| Setting             | Required | Default | Description |
-|:--------------------|:--------:|:-------:|:------------|
-| dialect             | False    | None    | The Dialect of SQLAlchamey |
-| driver_type         | False    | None    | The Python Driver you will be using to connect to the SQL server (either "pyodbc" or "pymssql") |
-| host                | False    | None    | The FQDN of the Host serving out the SQL Instance |
-| port                | False    | None    | The port on which SQL awaiting connection |
-| user                | False    | None    | The User Account who has been granted access to the SQL Server |
-| password            | False    | None    | The Password for the User account |
-| database            | False    | None    | The Default database for this connection |
+| Setting              | Required | Default | Description |
+|:---------------------|:--------:|:-------:|:------------|
+| dialect              | True     | mssql   | The Dialect of SQLAlchamey |
+| driver_type          | True     | None    | The Python Driver you will be using to connect to the SQL server |
+| host                 | True     | None    | The FQDN of the Host serving out the SQL Instance |
+| port                 | False    | None    | The port on which SQL awaiting connection |
+| user                 | True     | None    | The User Account who has been granted access to the SQL Server |
+| password             | True     | None    | The Password for the User account |
+| database             | True     | None    | The Default database for this connection |
 | sqlalchemy_eng_params| False    | None    | SQLAlchemy Engine Paramaters: fast_executemany, future |
-| sqlalchemy_url_query| False    | None    | SQLAlchemy URL Query options: driver, TrustServerCertificate |
-| batch_config        | False    | None    | Optional Batch Message configuration |
-| start_date          | False    | None    | The earliest record date to sync |
-| hd_jsonschema_types | False    |       0 | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
-| stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
-| stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
-| flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
-| flattening_max_depth| False    | None    | The max depth to flatten schemas. |
+| sqlalchemy_url_query | False    | None    | SQLAlchemy URL Query options: driver, TrustServerCertificate |
+| batch_config         | False    | None    | Optional Batch Message configuration |
+| start_date           | False    | None    | The earliest record date to sync |
+| hd_jsonschema_types  | False    |       0 | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
+| stream_maps          | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
+| stream_map_config    | False    | None    | User-defined config values to be used within map expressions. |
+| flattening_enabled   | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
+| flattening_max_depth | False    | None    | The max depth to flatten schemas. |
 
 A full list of supported settings and capabilities for this
 tap is available by running:
