@@ -73,17 +73,17 @@ Options 8 - 15 can be setup via `meltano config tap-mssql set`.  Examples for th
 
 When using `pyodbc` `sqlalchemy_url_query.driver` passes SQLAlchemny the installed ODBC driver. 
 ```bash
-meltano config target-mssql set sqlalchemy_url_query.driver "ODBC Driver 18 for SQL Server"
+meltano config tap-mssql set sqlalchemy_url_query.driver "ODBC Driver 18 for SQL Server"
 ```
 
 When using `pyodbc` `sqlalchemy_url_query.TrustServerCertificate` let SQLAlchemy know whether to trust server signed certificates when connecting to SQL Server.
 ```bash
-meltano config target-mssql set sqlalchemy_url_query.TrustServerCertificate yes
+meltano config tap-mssql set sqlalchemy_url_query.TrustServerCertificate yes
 ```
 
 The `pyodbc` driver has added support for a “fast executemany” mode of execution which greatly reduces round trips.  You can trun the option on or off by setting `sqlalchemy_eng_params.fast_executemany` to `"True"` or `"False"`
 ```bash
-meltano config target-mssql set sqlalchemy_eng_params.fast_executemany "True"
+meltano config tap-mssql set sqlalchemy_eng_params.fast_executemany "True"
 ```
 ### Accepted Config Options
 
