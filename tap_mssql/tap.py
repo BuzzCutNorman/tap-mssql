@@ -4,12 +4,6 @@ from __future__ import annotations
 
 from singer_sdk import SQLTap, SQLStream, SQLConnector
 from singer_sdk import typing as th  # JSON schema typing helpers
-from singer_sdk.helpers._classproperty import classproperty
-from singer_sdk.helpers.capabilities import (
-    CapabilitiesEnum,
-    PluginCapabilities,
-    TapCapabilities,
-)
 
 from tap_mssql.client import mssqlStream, mssqlConnector
 
