@@ -54,6 +54,7 @@ class Tapmssql(SQLTap):
             th.StringType,
             description="The Dialect of SQLAlchamey",
             required=True,
+            allowed_values=["mssql"],
             default="mssql"
         ),
         th.Property(
@@ -61,7 +62,8 @@ class Tapmssql(SQLTap):
             th.StringType,
             description="The Python Driver you will be using to connect to the SQL server",
             required=True,
-            allowed_values=["pyodbc", "pymssql"]
+            allowed_values=["pyodbc", "pymssql"],
+            default="pymssql"
         ),
         th.Property(
             "host",
