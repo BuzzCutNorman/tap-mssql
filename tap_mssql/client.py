@@ -35,7 +35,7 @@ class mssqlConnector(SQLConnector):
         """Class Default Init"""
         # If pyodbc given set pyodbc.pooling to False
         # This allows SQLA to manage to connection pool
-        if config['driver_type'] == 'pyodbc':
+        if config.get('driver_type') == 'pyodbc':
             pyodbc.pooling = False
 
         super().__init__(config, sqlalchemy_url)
@@ -49,32 +49,22 @@ class mssqlConnector(SQLConnector):
         Returns:
             The URL as a string.
         """
-        if config['dialect'] == "mssql":
-            url_drivername: str = config['dialect']
-        else:
-            cls.logger.error("Invalid dialect given")
-            exit(1)
-
-        if config['driver_type'] in ["pyodbc", "pymssql"]:
-            url_drivername += f"+{config['driver_type']}"
-        else:
-            cls.logger.error("Invalid driver_type given")
-            exit(1)
-
+        url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
+        
         config_url = URL.create(
             url_drivername,
-            config['user'],
-            config['password'],
-            host=config['host'],
-            database=config['database']
+            config.get('user'),
+            config.get('password'),
+            host=config.get('host'),
+            database=config.get('database')
         )
 
         if 'port' in config:
-            config_url = config_url.set(port=config['port'])
+            config_url = config_url.set(port=config.get('port'))
 
         if 'sqlalchemy_url_query' in config:
             config_url = config_url.update_query_dict(
-                config['sqlalchemy_url_query']
+                config.get('sqlalchemy_url_query')
                 )
 
         return (config_url)
