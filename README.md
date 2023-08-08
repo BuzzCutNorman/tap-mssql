@@ -103,7 +103,7 @@ tap-mssql --about --format=markdown
 | Setting              | Required | Default | Description |
 |:---------------------|:--------:|:-------:|:------------|
 | dialect              | True     | mssql   | The Dialect of SQLAlchamey |
-| driver_type          | True     | None    | The Python Driver you will be using to connect to the SQL server |
+| driver_type          | True     | pymssql | The Python Driver you will be using to connect to the SQL server |
 | host                 | True     | None    | The FQDN of the Host serving out the SQL Instance |
 | port                 | False    | None    | The port on which SQL awaiting connection |
 | user                 | True     | None    | The User Account who has been granted access to the SQL Server |
@@ -113,7 +113,7 @@ tap-mssql --about --format=markdown
 | sqlalchemy_url_query | False    | None    | SQLAlchemy URL Query options: driver, TrustServerCertificate |
 | batch_config         | False    | None    | Optional Batch Message configuration |
 | start_date           | False    | None    | The earliest record date to sync |
-| hd_jsonschema_types  | False    |       0 | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
+| hd_jsonschema_types  | False    | False | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
 | stream_maps          | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config    | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled   | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
