@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-08-30 MultiSubnetFailover:** A big thanks to @wesseljt and his colleagues for finding when using `pyodbc` you may need to pass `MultiSubnetFailover: yes` when connecting to an SQL Server AG VNN.  `MultiSubnetFailover` has been added to the settings.  This also prompted me to add a Troubleshooting section to the readme.
+
 **2023-08-07 Fix:**  The installation issue with `pymssql` has been fixed by making `pymssql` 2.2.7 required
 
 **2023-07-17 Upgraded to Meltano Singer-SDK 0.30.0:** 
@@ -78,7 +80,7 @@ When using `pyodbc` `sqlalchemy_url_query.driver` passes SQLAlchemny the install
 meltano config tap-mssql set sqlalchemy_url_query.driver "ODBC Driver 18 for SQL Server"
 ```
 
-When using `pyodbc` `sqlalchemy_url_query.TrustServerCertificate` let SQLAlchemy know whether to trust server signed certificates when connecting to SQL Server.
+When using `pyodbc` `sqlalchemy_url_query.TrustServerCertificate` let SQLAlchemy know whether to trust server signed certificates when connecting to SQL Server.  Using this will correct the connection error of 
 ```bash
 meltano config tap-mssql set sqlalchemy_url_query.TrustServerCertificate yes
 ```
@@ -141,6 +143,30 @@ Developer TODO: If your tap requires special access on the source system, or any
 ## Usage
 
 You can easily run `tap-mssql` by itself or in a pipeline using [Meltano](https://meltano.com/).
+
+## Troubleshooting
+
+### Pyodbc Connection Errors
+
+#### The certificate chain was issued by an authority that is not trusted:
+```
+sqlalchemy.exc.OperationalError: (pyodbc.OperationalError) ('08001', '[08001] [Microsoft][ODBC Driver 18 for SQL Server]SSL Provider: The certificate chain was issued by an authority that is not trusted.\r\n (-2146893019) (SQLDriverConnect); [08001] [Microsoft][ODBC Driver 18 for SQL Server]Client unable to establish connection (-2146893019)')
+```
+If the SQL Server you are connecting too is utlizing a self signed certificate you will get this error.  You can tell pyodbc to trust the self signed certificate with the following configuration command.
+
+```bash
+meltano config tap-mssql set sqlalchemy_url_query.TrustServerCertificate yes
+```
+
+#### Login timeout expired:
+```
+sqlalchemy.exc.OperationalError: (pyodbc.OperationalError) ('HYT00', '[HYT00] [Microsoft][ODBC Driver 17 for SQL Server]Login timeout expired (0) (SQLDriverConnect)')
+```
+Users have reported running into this issue when pointing to a Avaibility Group (AG) Virutal Network Name (VNN) when the group is split across multiple subnets. You will need to let pyodbc know this by adding `MultiSubnetFailover: yes`. This can ben done by running the following configuration command.
+
+```bash
+meltano config tap-mssql set sqlalchemy_url_query.MultiSubnetFailover yes
+```
 
 <!--
 ### Executing the Tap Directly
