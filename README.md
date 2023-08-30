@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-08-30 MultiSubnetFailover:** A big thanks to @wesseljt and his colleagues for finding when using `pyodbc` you may need to pass `MultiSubnetFailover: yes` when connecting to an SQL Server AG VNN.  `MultiSubnetFailover` has been added to the settings.  This also prompted me to add a Troubleshooting section to the readme.
+
 **2023-08-07 Fix:**  The installation issue with `pymssql` has been fixed by making `pymssql` 2.2.7 required
 
 **2023-07-17 Upgraded to Meltano Singer-SDK 0.30.0:** 
