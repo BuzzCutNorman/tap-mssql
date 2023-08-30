@@ -120,12 +120,17 @@ class Tapmssql(SQLTap):
                     description="The Driver to use when connection should match the Driver Type"
                 ),
                 th.Property(
+                    "MultiSubnetFailover",
+                    th.StringType,
+                    description="This is a Yes No option"
+                ),
+                th.Property(
                     "TrustServerCertificate",
                     th.StringType,
                     description="This is a Yes No option"
                 )
             ),
-            description="SQLAlchemy URL Query options: driver, TrustServerCertificate"
+            description="SQLAlchemy URL Query options: driver, MultiSubnetFailover, TrustServerCertificate"
         ),
         th.Property(
             "batch_config",
