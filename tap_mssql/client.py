@@ -81,7 +81,9 @@ class mssqlConnector(SQLConnector):
         eng_prefix = "ep."
         eng_config = {
             f"{eng_prefix}url": self.sqlalchemy_url,
-            f"{eng_prefix}echo": "False"
+            f"{eng_prefix}echo": "False",
+            f"{eng_prefix}json_serializer": self.serialize_json,
+            f"{eng_prefix}json_deserializer": self.deserialize_json,
         }
 
         if self.config.get('sqlalchemy_eng_params'):
