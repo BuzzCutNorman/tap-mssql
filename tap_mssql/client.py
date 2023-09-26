@@ -94,16 +94,20 @@ class mssqlConnector(SQLConnector):
 
     def to_jsonschema_type(
             self,
-            from_type: str
-            | sqlalchemy.types.TypeEngine
-            | type[sqlalchemy.types.TypeEngine],) -> None:
+            sql_type: (
+                str
+                | sqlalchemy.types.TypeEngine
+                | type[sqlalchemy.types.TypeEngine]
+                | Any
+            ),
+     ) -> None:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
 
         Args:
-            from_type: The SQL type as a string or as a TypeEngine.
+            sql_type: The SQL type as a string or as a TypeEngine.
                 If a TypeEngine is provided, it may be provided as a class or
                 a specific object instance.
 
@@ -111,23 +115,26 @@ class mssqlConnector(SQLConnector):
             A compatible JSON Schema type definition.
         """
         if self.config.get('hd_jsonschema_types', False):
-            return self.hd_to_jsonschema_type(from_type)
+            return self.hd_to_jsonschema_type(sql_type)
         else:
-            return self.org_to_jsonschema_type(from_type)
+            return self.org_to_jsonschema_type(sql_type)
 
     @staticmethod
     def org_to_jsonschema_type(
-        from_type: str
-        | sqlalchemy.types.TypeEngine
-        | type[sqlalchemy.types.TypeEngine],
-    ) -> dict:
+            sql_type: (
+                str
+                | sqlalchemy.types.TypeEngine
+                | type[sqlalchemy.types.TypeEngine]
+                | Any
+            ),
+     ) -> dict:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
 
         Args:
-            from_type: The SQL type as a string or as a TypeEngine.
+            sql_type: The SQL type as a string or as a TypeEngine.
                 If a TypeEngine is provided, it may be provided as a class or
                 a specific object instance.
 
@@ -140,54 +147,57 @@ class mssqlConnector(SQLConnector):
                 if scale = 0 it is typed as a INTEGER
                 if scale != 0 it is typed as NUMBER
         """
-        if str(from_type).startswith("NUMERIC"):
-            if str(from_type).endswith(", 0)"):
-                from_type = "int"
+        if str(sql_type).startswith("NUMERIC"):
+            if str(sql_type).endswith(", 0)"):
+                sql_type = "int"
             else:
-                from_type = "number"
+                sql_type = "number"
 
-        if str(from_type) in ["MONEY", "SMALLMONEY"]:
-            from_type = "number"
+        if str(sql_type) in ["MONEY", "SMALLMONEY"]:
+            sql_type = "number"
 
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
-        if str(from_type) in ['BIT']:
-            from_type = "bool"
+        if str(sql_type) in ['BIT']:
+            sql_type = "bool"
         
-        return SQLConnector.to_jsonschema_type(from_type)
+        return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
     def hd_to_jsonschema_type(
-        from_type: str
-        | sqlalchemy.types.TypeEngine
-        | type[sqlalchemy.types.TypeEngine],
-    ) -> dict:
+            sql_type: (
+                str
+                | sqlalchemy.types.TypeEngine
+                | type[sqlalchemy.types.TypeEngine]
+                | Any
+            ),
+     ) -> dict:
         """Returns a JSON Schema equivalent for the given SQL type.
 
         Developers may optionally add custom logic before calling the default
         implementation inherited from the base class.
 
         Args:
-            from_type: The SQL type as a string or as a TypeEngine.
+            sql_type: The SQL type as a string or as a TypeEngine.
                 If a TypeEngine is provided, it may be provided as a class or
                 a specific object instance.
 
         Raises:
-            ValueError: If the `from_type` value is not of type `str` or `TypeEngine`.
+            ValueError: If the `sql_type` value is not of type `str` or `TypeEngine`.
 
         Returns:
             A compatible JSON Schema type definition.
         """
         # This is taken from to_jsonschema_type() in typing.py
-        if isinstance(from_type, str):
-            sql_type_name = from_type
-        elif isinstance(from_type, sqlalchemy.types.TypeEngine):
-            sql_type_name = type(from_type).__name__
-        elif isinstance(from_type, type) and issubclass(
-            from_type, sqlalchemy.types.TypeEngine
+        if isinstance(sql_type, str):
+            sql_type_name = sql_type
+        elif isinstance(sql_type, sqlalchemy.types.TypeEngine):
+            sql_type_name = type(sql_type).__name__
+        elif isinstance(sql_type, type) and issubclass(
+            sql_type, sqlalchemy.types.TypeEngine
         ):
-            sql_type_name = from_type.__name__
+            sql_type_name = sql_type.__name__
         else:
             raise ValueError(
                 "Expected `str` or a SQLAlchemy `TypeEngine` object or type."
@@ -195,9 +205,9 @@ class mssqlConnector(SQLConnector):
 
         # Add in the length of the
         if sql_type_name in ['CHAR', 'NCHAR', 'VARCHAR', 'NVARCHAR']:
-            maxLength: int = getattr(from_type, 'length')
+            maxLength: int = getattr(sql_type, 'length')
 
-            if getattr(from_type, 'length'):
+            if getattr(sql_type, 'length'):
                 return {
                     "type": ["string"],
                     "maxLength": maxLength
@@ -222,8 +232,8 @@ class mssqlConnector(SQLConnector):
             }
 
         if sql_type_name in ['BINARY', 'IMAGE', 'VARBINARY']:
-            maxLength: int = getattr(from_type, 'length')
-            if getattr(from_type, 'length'):
+            maxLength: int = getattr(sql_type, 'length')
+            if getattr(sql_type, 'length'):
                 return {
                     "type": ["string"],
                     "contentEncoding": "base64",
@@ -274,8 +284,8 @@ class mssqlConnector(SQLConnector):
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
         if sql_type_name in ("NUMERIC", "DECIMAL"):
-            precision: int = getattr(from_type, 'precision')
-            scale: int = getattr(from_type, 'scale')
+            precision: int = getattr(sql_type, 'precision')
+            scale: int = getattr(sql_type, 'scale')
             if scale == 0:
                 return {
                     "type": ["integer"],
@@ -342,7 +352,7 @@ class mssqlConnector(SQLConnector):
                 "maximum": 3.40e38
             }
 
-        return SQLConnector.to_jsonschema_type(from_type)
+        return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
     def to_sql_type(jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
