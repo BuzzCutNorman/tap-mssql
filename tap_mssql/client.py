@@ -40,7 +40,7 @@ class mssqlConnector(SQLConnector):
 
         super().__init__(config, sqlalchemy_url)
 
-    def get_sqlalchemy_url(cls, config: dict) -> str:
+    def get_sqlalchemy_url(cls, config: dict[str, Any]) -> str:
         """Return the SQLAlchemy URL string.
 
         Args:
