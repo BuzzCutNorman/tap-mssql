@@ -244,7 +244,13 @@ class mssqlConnector(SQLConnector):
                     "type": ["string"],
                     "contentEncoding": "base64",
                 }
-
+            
+        if sql_type_name in ['ROWVERSION', 'TIMESTAMP']:
+            return {
+                "type": ["string"],
+                "contentEncoding": "base64",
+                "maxLength": 12
+	}
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
