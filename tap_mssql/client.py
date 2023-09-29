@@ -162,6 +162,9 @@ class mssqlConnector(SQLConnector):
         if str(sql_type) in ['BIT']:
             sql_type = "bool"
         
+        if str(sql_type) in ['ROWVERSION', 'TIMESTAMP']:
+            sql_type = "string"
+
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
