@@ -96,6 +96,12 @@ class Tapmssql(SQLTap):
             required=True
         ),
         th.Property(
+            "azure_synapse_dw",
+            th.BooleanType,
+            default=False,
+            description="Test to see if connection_options works for pymssql"
+        ),
+        th.Property(
             "sqlalchemy_eng_params",
             th.ObjectType(
                 th.Property(
