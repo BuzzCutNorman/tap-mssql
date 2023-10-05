@@ -318,7 +318,8 @@ class mssqlConnector(SQLConnector):
                 maximum_scientific_format += f"e+{precision}"
                 minimum_scientific_format += maximum_scientific_format
 
-                if "e+" not in str(float(maximum_as_number)):
+                if "e+" not in str(float(maximum_as_number))\
+                    and "1" not in str(float(maximum_as_number)):
                     return {
                         "type": ["number"],
                         "minimum": float(minimum_as_number),
