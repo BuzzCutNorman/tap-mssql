@@ -3,7 +3,7 @@ name = "tap-mssql"
 version = "0.0.1"
 description = "`tap-mssql` is a Singer tap for mssql, built with the Meltano Singer SDK."
 readme = "README.md"
-authors = ["Dan Norman"]
+authors = ["Dan Norman <buzzcutnorman@gmail.com>"]
 keywords = [
     "ELT",
     "mssql",
@@ -11,15 +11,16 @@ keywords = [
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "<3.12,>=3.7.1"
-singer-sdk = { version="^0.30.0" }
-fs-s3fs = { version = "^1.1.1", optional = true}
+python = ">=3.7.1,<4"
+singer-sdk = { version="~=0.32.0" }
+fs-s3fs = { version = "~=1.1.1", optional = true }
+sqlalchemy = "<3"
 pyodbc = "^4.0.39"
-pymssql = "2.2.7"
+pymssql = "2.2.8"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.2.1"
-singer-sdk = { version="^0.30.0", extras = ["testing"] }
+pytest = ">=7.4.0"
+singer-sdk = { version="~=0.32.0", extras = ["testing"] }
 
 [tool.poetry.extras]
 s3 = ["fs-s3fs"]

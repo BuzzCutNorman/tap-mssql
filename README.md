@@ -6,13 +6,9 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2023-10-16 Upgraded to Meltano Singer-SDK 0.32.0:** SQLAlchemy 2.x is main stream in this version so I took advantage of that and bumped from `1.4.x` to `2.x`.  SDK 0.32.0 also has a built-in feature to set streams to be resumeable when running incremental extracts (Thanks 🙏 to Pat from Meltano). The issue with Windows wheels for `pymssql` was resolved so I bumped it back up to `2.2.8`. The `BIT` data type is now converted to the json schema type of `bool`.  MS SQL has the data type `TIMESTAMP` which is used to track row versions and is definitely not a `datetime`.  `TIMESTAMP` and `ROWVERSION` are now converted to a `string`.  In the `hd_jsonschema_types` the `minimum` and `maximum` values used to define `NUMERIC` or `DECIMAL` precision and scale values were being rounded.  This caused an issue with the translation on the target side.  I leveraged scientific notation to resolve this.
+
 **2023-08-30 MultiSubnetFailover:** A big thanks to @wesseljt and his colleagues for finding when using `pyodbc` you may need to pass `MultiSubnetFailover: yes` when connecting to an SQL Server AG VNN.  `MultiSubnetFailover` has been added to the settings.  This also prompted me to add a Troubleshooting section to the readme.
-
-**2023-08-07 Fix:**  The installation issue with `pymssql` has been fixed by making `pymssql` 2.2.7 required
-
-**2023-07-17 Upgraded to Meltano Singer-SDK 0.30.0:** 
-
-**2023-06-14 Enhancement:**  The behavior of when a new mssqlConnector class is generated has been changed.  When the Tap discovers the database and also initializes Streams a Tap level connector is generated and passed on to Streams.  This mean instead of a database session per Stream there is a smaller pool of session being utilized over and over. You can use sp_who to see how may sessions are active.  I couldn't have added this without the SQLConnector refactoring work @qbatten did in SDK 0.20.0.  The inspiration for this feature came from comments made by @kgpayne. So a big Thanks 🙏 to both of them.
 
 **2023-05-03 Incremental Replication:**  Equipped with the Singer-SDK documentation on how to implement Incremental Replication and davert0 issue filled with great details I headed off on a coding adventure.  There were twists, turns, and backtracking but in the end you can now setup Incremental Replication and it might work.  If you are using Meltano here is the documentation to follow to setup [Key-based Incremental Replication ](https://docs.meltano.com/guide/integration#key-based-incremental-replication) and manage [Incremental Replication State](https://docs.meltano.com/guide/integration#incremental-replication-state). Skim over the documentation and head off on you own Incremental Replication adventure.
 
