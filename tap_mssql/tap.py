@@ -122,14 +122,16 @@ class Tapmssql(SQLTap):
                         th.Property(
                             "root",
                             th.StringType,
-                            description="the directory you want batch messages to be placed in\n"\
-                                        "example: file://test/batches",
+                            description=("the directory you want batch messages to be placed in\n"
+                                        "example: file://test/batches"
+                            )
                         ),
                         th.Property(
                             "prefix",
                             th.StringType,
-                            description="What prefix you want your messages to have\n"\
-                                        "example: test-batch-",
+                            description=("What prefix you want your messages to have\n"
+                                        "example: test-batch-"
+                            )
                         )
                     )
                 )
