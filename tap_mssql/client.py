@@ -460,6 +460,9 @@ class MSSQLStream(SQLStream):
 
     connector_class = MSSQLConnector
 
+    supports_nulls_first: bool = False
+    """Whether the database supports the NULLS FIRST/LAST syntax."""
+
     def post_process(
         self,
         row: dict,
@@ -523,8 +526,8 @@ class MSSQLStream(SQLStream):
                 stream does not support partitioning.
         """
         if context:
-            not_implemented_msg: str = f"Stream '{self.name}' does not support partitioning."
-            raise NotImplementedError(not_implemented_msg)
+            msg = f"Stream '{self.name}' does not support partitioning."
+            raise NotImplementedError(msg)
 
         selected_column_names = self.get_selected_schema()["properties"].keys()
         table = self.connector.get_table(
@@ -535,7 +538,12 @@ class MSSQLStream(SQLStream):
 
         if self.replication_key:
             replication_key_col = table.columns[self.replication_key]
-            query = query.order_by(replication_key_col)
+            order_by = (
+                sa.nulls_first(replication_key_col.asc())
+                if self.supports_nulls_first
+                else replication_key_col.asc()
+            )
+            query = query.order_by(order_by)
             # # remove all below in final #
             # self.logger.info('\n')
             # self.logger.info(f"The replication_key_col SQLA type: {replication_key_col.type}")
@@ -587,9 +595,11 @@ class MSSQLStream(SQLStream):
         # self.logger.info('\n')
         # # remove all to here in final #
 
-        with self.connector._connect() as conn:
-            for record in conn.execute(query):
-                transformed_record = self.post_process(dict(record._mapping))
+        with self.connector._connect() as conn:  # noqa: SLF001
+            for record in conn.execute(query).mappings():
+                # TODO: Standardize record mapping type  # noqa: TD002, FIX002
+                # https://github.com/meltano/sdk/issues/2096
+                transformed_record = self.post_process(dict(record))
                 if transformed_record is None:
                     # Record filtered out during post_process()
                     continue
