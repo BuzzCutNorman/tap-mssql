@@ -5,14 +5,14 @@ from __future__ import annotations
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_mssql.client import mssqlStream
+from tap_mssql.client import MSSQLStream
 
 
 class Tapmssql(SQLTap):
     """mssql tap class."""
 
     name = "tap-mssql"
-    default_stream_class = mssqlStream
+    default_stream_class = MSSQLStream
 
     config_jsonschema = th.PropertiesList(
         th.Property(
@@ -122,14 +122,16 @@ class Tapmssql(SQLTap):
                         th.Property(
                             "root",
                             th.StringType,
-                            description="the directory you want batch messages to be placed in\n"\
-                                        "example: file://test/batches",
+                            description=("the directory you want batch messages to be placed in\n"
+                                        "example: file://test/batches"
+                            )
                         ),
                         th.Property(
                             "prefix",
                             th.StringType,
-                            description="What prefix you want your messages to have\n"\
-                                        "example: test-batch-",
+                            description=("What prefix you want your messages to have\n"
+                                        "example: test-batch-"
+                            )
                         )
                     )
                 )

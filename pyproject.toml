@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tap-mssql"
-version = "0.0.2"
+version = "0.0.3"
 description = "`tap-mssql` is a Singer tap for mssql, built with the Meltano Singer SDK."
 readme = "README.md"
 authors = ["Dan Norman <buzzcutnorman@gmail.com>"]
@@ -22,21 +22,20 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8"
 importlib-resources = { version = "==6.1.*", python = "<3.9" }
-singer-sdk = { version="~=0.34.1" }
+singer-sdk = { version="~=0.36.1" }
 fs-s3fs = { version = "~=1.1.1", optional = true }
-sqlalchemy = "<3"
-pyodbc = "^5.0.1"
+pyodbc = "^5.1.0"
 pymssql = "^2.2.11"
 
 [tool.poetry.dev-dependencies]
 pytest = ">=7.4.0"
-singer-sdk = { version="~=0.34.1", extras = ["testing"] }
+singer-sdk = { version="~=0.36.1", extras = ["testing"] }
 
 [tool.poetry.extras]
 s3 = ["fs-s3fs"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_unused_configs = true
 plugins = "sqlmypy"
 
@@ -63,7 +62,7 @@ known-first-party = ["tap_mssql"]
 convention = "google"
 
 [build-system]
-requires = ["poetry-core==1.8.1"]
+requires = ["poetry-core==1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]

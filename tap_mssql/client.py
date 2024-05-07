@@ -4,27 +4,26 @@ This includes mssqlStream and mssqlConnector.
 """
 from __future__ import annotations
 
+import datetime
 import gzip
 import json
-import datetime
-
 from base64 import b64encode
 from decimal import Decimal
+from typing import TYPE_CHECKING, Any, Iterable, Iterator
 from uuid import uuid4
-from typing import Any, Iterable, Iterator
 
 import pendulum
 import pyodbc
-import sqlalchemy
-
-from sqlalchemy.engine import Engine
-from sqlalchemy.engine.url import URL
-
+import sqlalchemy as sa
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
+from sqlalchemy.engine.url import URL
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 
-class mssqlConnector(SQLConnector):
+class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
 
     def __init__(
@@ -32,15 +31,15 @@ class mssqlConnector(SQLConnector):
             config: dict | None = None,
             sqlalchemy_url: str | None = None
          ) -> None:
-        """Class Default Init"""
+        """Class Default Init."""
         # If pyodbc given set pyodbc.pooling to False
         # This allows SQLA to manage to connection pool
-        if config.get('driver_type') == 'pyodbc':
+        if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
 
         super().__init__(config, sqlalchemy_url)
 
-    def get_sqlalchemy_url(cls, config: dict[str, Any]) -> str:
+    def get_sqlalchemy_url(self, config: dict[str, Any]) -> str:
         """Return the SQLAlchemy URL string.
 
         Args:
@@ -50,21 +49,21 @@ class mssqlConnector(SQLConnector):
             The URL as a string.
         """
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
-        
+
         config_url = URL.create(
             url_drivername,
-            config.get('user'),
-            config.get('password'),
-            host=config.get('host'),
-            database=config.get('database')
+            config.get("user"),
+            config.get("password"),
+            host=config.get("host"),
+            database=config.get("database")
         )
 
-        if 'port' in config:
-            config_url = config_url.set(port=config.get('port'))
+        if "port" in config:
+            config_url = config_url.set(port=config.get("port"))
 
-        if 'sqlalchemy_url_query' in config:
+        if "sqlalchemy_url_query" in config:
             config_url = config_url.update_query_dict(
-                config.get('sqlalchemy_url_query')
+                config.get("sqlalchemy_url_query")
                 )
 
         return (config_url)
@@ -86,18 +85,18 @@ class mssqlConnector(SQLConnector):
             f"{eng_prefix}json_deserializer": self.deserialize_json,
         }
 
-        if self.config.get('sqlalchemy_eng_params'):
-            for key, value in self.config['sqlalchemy_eng_params'].items():
+        if self.config.get("sqlalchemy_eng_params"):
+            for key, value in self.config["sqlalchemy_eng_params"].items():
                 eng_config.update({f"{eng_prefix}{key}": value})
 
-        return sqlalchemy.engine_from_config(eng_config, prefix=eng_prefix)
+        return sa.engine_from_config(eng_config, prefix=eng_prefix)
 
     def to_jsonschema_type(
             self,
             sql_type: (
-                str
-                | sqlalchemy.types.TypeEngine
-                | type[sqlalchemy.types.TypeEngine]
+                str  # noqa: ANN401
+                | sa.types.TypeEngine
+                | type[sa.types.TypeEngine]
                 | Any
             ),
      ) -> None:
@@ -114,17 +113,17 @@ class mssqlConnector(SQLConnector):
         Returns:
             A compatible JSON Schema type definition.
         """
-        if self.config.get('hd_jsonschema_types', False):
+        if self.config.get("hd_jsonschema_types", False):
             return self.hd_to_jsonschema_type(sql_type)
-        else:
-            return self.org_to_jsonschema_type(sql_type)
+
+        return self.org_to_jsonschema_type(sql_type)
 
     @staticmethod
     def org_to_jsonschema_type(
             sql_type: (
-                str
-                | sqlalchemy.types.TypeEngine
-                | type[sqlalchemy.types.TypeEngine]
+                str  # noqa: ANN401
+                | sa.types.TypeEngine
+                | type[sa.types.TypeEngine]
                 | Any
             ),
      ) -> dict:
@@ -140,18 +139,13 @@ class mssqlConnector(SQLConnector):
 
         Returns:
             A compatible JSON Schema type definition.
-        """
 
-        """
-            Checks for the MSSQL type of NUMERIC
-                if scale = 0 it is typed as a INTEGER
-                if scale != 0 it is typed as NUMBER
+        Checks for the MSSQL type of NUMERIC
+            if scale = 0 it is typed as a INTEGER
+            if scale != 0 it is typed as NUMBER
         """
         if str(sql_type).startswith("NUMERIC"):
-            if str(sql_type).endswith(", 0)"):
-                sql_type = "int"
-            else:
-                sql_type = "number"
+            sql_type = "int" if str(sql_type).endswith(", 0)") else "number"
 
         if str(sql_type) in ["MONEY", "SMALLMONEY"]:
             sql_type = "number"
@@ -159,10 +153,10 @@ class mssqlConnector(SQLConnector):
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
-        if str(sql_type) in ['BIT']:
+        if str(sql_type) in ["BIT"]:
             sql_type = "bool"
-        
-        if str(sql_type) in ['ROWVERSION', 'TIMESTAMP']:
+
+        if str(sql_type) in ["ROWVERSION", "TIMESTAMP"]:
             sql_type = "string"
 
         return SQLConnector.to_jsonschema_type(sql_type)
@@ -170,9 +164,9 @@ class mssqlConnector(SQLConnector):
     @staticmethod
     def hd_to_jsonschema_type(
             sql_type: (
-                str
-                | sqlalchemy.types.TypeEngine
-                | type[sqlalchemy.types.TypeEngine]
+                str  # noqa: ANN401
+                | sa.types.TypeEngine
+                | type[sa.types.TypeEngine]
                 | Any
             ),
      ) -> dict:
@@ -195,48 +189,48 @@ class mssqlConnector(SQLConnector):
         # This is taken from to_jsonschema_type() in typing.py
         if isinstance(sql_type, str):
             sql_type_name = sql_type
-        elif isinstance(sql_type, sqlalchemy.types.TypeEngine):
+        elif isinstance(sql_type, sa.types.TypeEngine):
             sql_type_name = type(sql_type).__name__
         elif isinstance(sql_type, type) and issubclass(
-            sql_type, sqlalchemy.types.TypeEngine
+            sql_type, sa.types.TypeEngine
         ):
             sql_type_name = sql_type.__name__
         else:
-            raise ValueError(
+            raise TypeError(
                 "Expected `str` or a SQLAlchemy `TypeEngine` object or type."
              )
 
         # Add in the length of the
-        if sql_type_name in ['CHAR', 'NCHAR', 'VARCHAR', 'NVARCHAR']:
-            maxLength: int = getattr(sql_type, 'length')
+        if sql_type_name in ["CHAR", "NCHAR", "VARCHAR", "NVARCHAR"]:
+            maxLength: int = getattr(sql_type, "length")
 
-            if getattr(sql_type, 'length'):
+            if getattr(sql_type, "length"):
                 return {
                     "type": ["string"],
                     "maxLength": maxLength
                 }
 
-        if sql_type_name == 'TIME':
+        if sql_type_name == "TIME":
             return {
                 "type": ["string"],
                 "format": "time"
             }
 
-        if sql_type_name == 'UNIQUEIDENTIFIER':
+        if sql_type_name == "UNIQUEIDENTIFIER":
             return {
                 "type": ["string"],
                 "format": "uuid"
             }
 
-        if sql_type_name == 'XML':
+        if sql_type_name == "XML":
             return {
                 "type": ["string"],
                 "contentMediaType": "application/xml",
             }
 
-        if sql_type_name in ['BINARY', 'IMAGE', 'VARBINARY']:
-            maxLength: int = getattr(sql_type, 'length')
-            if getattr(sql_type, 'length'):
+        if sql_type_name in ["BINARY", "IMAGE", "VARBINARY"]:
+            maxLength: int = getattr(sql_type, "length")
+            if getattr(sql_type, "length"):
                 return {
                     "type": ["string"],
                     "contentEncoding": "base64",
@@ -247,43 +241,43 @@ class mssqlConnector(SQLConnector):
                     "type": ["string"],
                     "contentEncoding": "base64",
                 }
-            
-        if sql_type_name in ['ROWVERSION', 'TIMESTAMP']:
+
+        if sql_type_name in ["ROWVERSION", "TIMESTAMP"]:
             return {
                 "type": ["string"],
                 "contentEncoding": "base64",
                 "maxLength": 12
-	        }
-        
+            }
+
         # This is a MSSQL only DataType
         # SQLA does the converion from 0,1
         # to Python True, False
-        if sql_type_name == 'BIT':
+        if sql_type_name == "BIT":
             return {"type": ["boolean"]}
 
         # This is a MSSQL only DataType
-        if sql_type_name == 'TINYINT':
+        if sql_type_name == "TINYINT":
             return {
                 "type": ["integer"],
                 "minimum": 0,
                 "maximum": 255
             }
 
-        if sql_type_name == 'SMALLINT':
+        if sql_type_name == "SMALLINT":
             return {
                 "type": ["integer"],
                 "minimum": -32768,
                 "maximum": 32767
             }
 
-        if sql_type_name == 'INTEGER':
+        if sql_type_name == "INTEGER":
             return {
                 "type": ["integer"],
                 "minimum": -2147483648,
                 "maximum": 2147483647
             }
 
-        if sql_type_name == 'BIGINT':
+        if sql_type_name == "BIGINT":
             return {
                 "type": ["integer"],
                 "minimum": -9223372036854775808,
@@ -294,43 +288,43 @@ class mssqlConnector(SQLConnector):
         #     if scale = 0 it is typed as a INTEGER
         #     if scale != 0 it is typed as NUMBER
         if sql_type_name in ("NUMERIC", "DECIMAL"):
-            precision: int = getattr(sql_type, 'precision')
-            scale: int = getattr(sql_type, 'scale')
+            precision: int = getattr(sql_type, "precision")
+            scale: int = getattr(sql_type, "scale")
             if scale == 0:
                 return {
                     "type": ["integer"],
                     "minimum": (-pow(10, precision))+1,
                     "maximum": (pow(10, precision))-1
                 }
-            else:
-                maximum_as_number = str()
-                minimum_as_number: str = '-'
-                for i in range(precision):
-                    if i == (precision-scale):
-                        maximum_as_number += '.'
-                    maximum_as_number += '9'
-                minimum_as_number += maximum_as_number
 
-                maximum_scientific_format: str = '9.'
-                minimum_scientific_format: str = '-'
-                for i in range(scale):
-                    maximum_scientific_format += '9'
-                maximum_scientific_format += f"e+{precision}"
-                minimum_scientific_format += maximum_scientific_format
+            maximum_as_number = str()
+            minimum_as_number: str = "-"
+            for i in range(precision):
+                if i == (precision-scale):
+                    maximum_as_number += "."
+                maximum_as_number += "9"
+            minimum_as_number += maximum_as_number
 
-                if "e+" not in str(float(maximum_as_number))\
-                    and "1" not in str(float(maximum_as_number)):
-                    return {
-                        "type": ["number"],
-                        "minimum": float(minimum_as_number),
-                        "maximum": float(maximum_as_number)
-                    }
-                else:
-                    return {
-                        "type": ["number"],
-                        "minimum": float(minimum_scientific_format),
-                        "maximum": float(maximum_scientific_format)
-                    }
+            maximum_scientific_format: str = "9."
+            minimum_scientific_format: str = "-"
+            for _ in range(scale):
+                maximum_scientific_format += "9"
+            maximum_scientific_format += f"e+{precision}"
+            minimum_scientific_format += maximum_scientific_format
+
+            if "e+" not in str(float(maximum_as_number))\
+                and "1" not in str(float(maximum_as_number)):
+                return {
+                    "type": ["number"],
+                    "minimum": float(minimum_as_number),
+                    "maximum": float(maximum_as_number)
+                }
+
+            return {
+                "type": ["number"],
+                "minimum": float(minimum_scientific_format),
+                "maximum": float(maximum_scientific_format)
+            }
 
         # This is a MSSQL only DataType
         if sql_type_name == "SMALLMONEY":
@@ -366,7 +360,7 @@ class mssqlConnector(SQLConnector):
         return SQLConnector.to_jsonschema_type(sql_type)
 
     @staticmethod
-    def to_sql_type(jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
+    def to_sql_type(jsonschema_type: dict) -> sa.types.TypeEngine:
         """Return a JSON Schema representation of the provided type.
 
         By default will call `typing.to_sql_type()`.
@@ -382,16 +376,22 @@ class mssqlConnector(SQLConnector):
         Returns:
             The SQLAlchemy type representation of the data type.
         """
-
         return SQLConnector.to_sql_type(jsonschema_type)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    """Custom class extends json.JSONEncoder"""
+    """Custom class extends json.JSONEncoder."""
 
     # Override default() method
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:  # noqa: ANN401
+        """Customized default method.
 
+        Args:
+            obj: The obj you want to encode.
+
+        Returns:
+            The properly converted obj.
+        """
         # Datetime in ISO format
         if isinstance(obj, datetime.datetime):
             return pendulum.instance(obj).isoformat()
@@ -403,13 +403,13 @@ class CustomJSONEncoder(json.JSONEncoder):
         # Time in ISO format truncated to the second to pass
         # json-schema validation
         if isinstance(obj, datetime.time):
-            return obj.isoformat(timespec='seconds')
+            return obj.isoformat(timespec="seconds")
 
         # JSON Encoder doesn't know Decimals but it
         # does know float so we convert Decimal to float
         if isinstance(obj, Decimal):
             return float(obj)
-        
+
         # Default behavior for all other types
         return super().default(obj)
 
@@ -455,10 +455,13 @@ class JSONLinesBatcher(BaseBatcher):
             yield [file_url]
 
 
-class mssqlStream(SQLStream):
+class MSSQLStream(SQLStream):
     """Stream class for mssql streams."""
 
-    connector_class = mssqlConnector
+    connector_class = MSSQLConnector
+
+    supports_nulls_first: bool = False
+    """Whether the database supports the NULLS FIRST/LAST syntax."""
 
     def post_process(
         self,
@@ -488,7 +491,7 @@ class mssqlStream(SQLStream):
         record: dict = row
 
         # Get the Stream Properties Dictornary from the Schema
-        properties: dict = self.schema.get('properties')
+        properties: dict = self.schema.get("properties")
 
         for key, value in record.items():
             if value is not None:
@@ -498,7 +501,7 @@ class mssqlStream(SQLStream):
                 if isinstance(value, datetime.date):
                     record.update({key: value.isoformat()})
                 # Encode base64 binary fields in the record
-                if property_schema.get('contentEncoding') == 'base64':
+                if property_schema.get("contentEncoding") == "base64":
                     record.update({key: b64encode(value).decode()})
 
         return record
@@ -523,9 +526,8 @@ class mssqlStream(SQLStream):
                 stream does not support partitioning.
         """
         if context:
-            raise NotImplementedError(
-                f"Stream '{self.name}' does not support partitioning.",
-            )
+            msg = f"Stream '{self.name}' does not support partitioning."
+            raise NotImplementedError(msg)
 
         selected_column_names = self.get_selected_schema()["properties"].keys()
         table = self.connector.get_table(
@@ -536,7 +538,12 @@ class mssqlStream(SQLStream):
 
         if self.replication_key:
             replication_key_col = table.columns[self.replication_key]
-            query = query.order_by(replication_key_col)
+            order_by = (
+                sa.nulls_first(replication_key_col.asc())
+                if self.supports_nulls_first
+                else replication_key_col.asc()
+            )
+            query = query.order_by(order_by)
             # # remove all below in final #
             # self.logger.info('\n')
             # self.logger.info(f"The replication_key_col SQLA type: {replication_key_col.type}")
@@ -588,9 +595,11 @@ class mssqlStream(SQLStream):
         # self.logger.info('\n')
         # # remove all to here in final #
 
-        with self.connector._connect() as conn:
-            for record in conn.execute(query):
-                transformed_record = self.post_process(dict(record._mapping))
+        with self.connector._connect() as conn:  # noqa: SLF001
+            for record in conn.execute(query).mappings():
+                # TODO: Standardize record mapping type  # noqa: TD002, FIX002
+                # https://github.com/meltano/sdk/issues/2096
+                transformed_record = self.post_process(dict(record))
                 if transformed_record is None:
                     # Record filtered out during post_process()
                     continue
