@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2024-05-07 Upgraded to Meltano Singer-SDK 0.36.1**
+
 **2024-01-31 Upgraded to Meltano Singer-SDK 0.34.1:** Happy New Year!!!🎉.  My goal was to start using tags and releases by 2024 and was pretty close.  You can now lock on a release number if you want. 
 
 **2023-10-16 Upgraded to Meltano Singer-SDK 0.32.0:** SQLAlchemy 2.x is main stream in this version so I took advantage of that and bumped from `1.4.x` to `2.x`.  SDK 0.32.0 also has a built-in feature to set streams to be resumeable when running incremental extracts (Thanks 🙏 to Pat from Meltano). The issue with Windows wheels for `pymssql` was resolved so I bumped it back up to `2.2.8`. The `BIT` data type is now converted to the json schema type of `bool`.  MS SQL has the data type `TIMESTAMP` which is used to track row versions and is definitely not a `datetime`.  `TIMESTAMP` and `ROWVERSION` are now converted to a `string`.  In the `hd_jsonschema_types` the `minimum` and `maximum` values used to define `NUMERIC` or `DECIMAL` precision and scale values were being rounded.  This caused an issue with the translation on the target side.  I leveraged scientific notation to resolve this.
