@@ -26,7 +26,7 @@ class Tapmssql(SQLTap):
         th.Property(
             "driver_type",
             th.StringType,
-            description="The Python Driver you will be using to connect to the SQL server",
+            description="The Python Driver you will be using to connect to the SQL server",  # noqa: E501
             required=True,
             allowed_values=["pyodbc", "pymssql"],
             default="pymssql"
@@ -45,7 +45,7 @@ class Tapmssql(SQLTap):
         th.Property(
             "user",
             th.StringType,
-            description="The User Account who has been granted access to the SQL Server",
+            description="The User Account who has been granted access to the SQL Server",  # noqa: E501
             required=True
         ),
         th.Property(
@@ -83,7 +83,7 @@ class Tapmssql(SQLTap):
                 th.Property(
                     "driver",
                     th.StringType,
-                    description="The Driver to use when connection should match the Driver Type"
+                    description="The Driver to use when connection should match the Driver Type"  # noqa: E501
                 ),
                 th.Property(
                     "MultiSubnetFailover",
@@ -96,7 +96,7 @@ class Tapmssql(SQLTap):
                     description="This is a Yes No option"
                 )
             ),
-            description="SQLAlchemy URL Query options: driver, MultiSubnetFailover, TrustServerCertificate"
+            description="SQLAlchemy URL Query options: driver, MultiSubnetFailover, TrustServerCertificate"  # noqa: E501
         ),
         th.Property(
             "batch_config",
@@ -112,7 +112,7 @@ class Tapmssql(SQLTap):
                         th.Property(
                             "compression",
                             th.StringType,
-                            description="Currently the only compression options is gzip",
+                            description="Currently the only compression options is gzip",  # noqa: E501
                         )
                     )
                 ),
@@ -122,7 +122,7 @@ class Tapmssql(SQLTap):
                         th.Property(
                             "root",
                             th.StringType,
-                            description=("the directory you want batch messages to be placed in\n"
+                            description=("the directory you want batch messages to be placed in\n"  # noqa: E501
                                         "example: file://test/batches"
                             )
                         ),
