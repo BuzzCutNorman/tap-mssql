@@ -2,10 +2,36 @@
 
 from __future__ import annotations
 
+import datetime
+import sys
+import typing as t
+from typing import TYPE_CHECKING
+
+import msgspec
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
 from tap_mssql.client import MSSQLStream
+
+if TYPE_CHECKING:
+    from singer_sdk._singerlib.encoding._simple import Message
+
+msg_buffer = bytearray(64)
+
+
+def enc_hook(obj: t.Any) -> t.Any:  # noqa: ANN401
+    """Enocding type helper for non native types.
+
+    Args:
+        obj: the item to be encoded
+
+    Returns:
+        The object converted to the appropriate type, default is str
+    """
+    return obj.isoformat(sep="T") if isinstance(obj, datetime) else str(obj)
+
+
+encoder = msgspec.json.Encoder(enc_hook=enc_hook, decimal_format="number")
 
 
 class Tapmssql(SQLTap):
@@ -151,6 +177,27 @@ class Tapmssql(SQLTap):
         ),
     ).to_dict()
 
+    def format_message(self, message: Message) -> str | bytes:  # noqa: PLR6301
+        """Serialize a dictionary into a line of json.
+
+        Args:
+            message: A Singer message object.
+
+        Returns:
+            A string of serialized json.
+        """
+        encoder.encode_into(message.to_dict(), msg_buffer)
+        msg_buffer.extend(b"\n")
+        return msg_buffer
+
+    def write_message(self, message: Message) -> None:
+        """Write a message to stdout.
+
+        Args:
+            message: The message to write.
+        """
+        sys.stdout.buffer.write(self.format_message(message))
+        sys.stdout.buffer.flush()
 
 if __name__ == "__main__":
     Tapmssql.cli()
