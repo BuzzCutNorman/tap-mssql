@@ -2,36 +2,18 @@
 
 from __future__ import annotations
 
-import datetime
 import sys
 import typing as t
 from typing import TYPE_CHECKING
 
-import msgspec
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_mssql.client import MSSQLStream
+from .client import MSSQLStream
+from .json import encoder
 
 if TYPE_CHECKING:
     from singer_sdk._singerlib.encoding._simple import Message
-
-msg_buffer = bytearray(64)
-
-
-def enc_hook(obj: t.Any) -> t.Any:  # noqa: ANN401
-    """Enocding type helper for non native types.
-
-    Args:
-        obj: the item to be encoded
-
-    Returns:
-        The object converted to the appropriate type, default is str
-    """
-    return obj.isoformat(sep="T") if isinstance(obj, datetime) else str(obj)
-
-
-encoder = msgspec.json.Encoder(enc_hook=enc_hook, decimal_format="number")
 
 
 class Tapmssql(SQLTap):
@@ -39,6 +21,8 @@ class Tapmssql(SQLTap):
 
     name = "tap-mssql"
     default_stream_class = MSSQLStream
+    default_output = sys.stdout.buffer
+    encode_msg_buffer = bytearray(64)
 
     config_jsonschema = th.PropertiesList(
         th.Property(
@@ -177,7 +161,8 @@ class Tapmssql(SQLTap):
         ),
     ).to_dict()
 
-    def format_message(self, message: Message) -> str | bytes:  # noqa: PLR6301
+
+    def serialize_message(self, message: Message) -> str:
         """Serialize a dictionary into a line of json.
 
         Args:
@@ -186,9 +171,9 @@ class Tapmssql(SQLTap):
         Returns:
             A string of serialized json.
         """
-        encoder.encode_into(message.to_dict(), msg_buffer)
-        msg_buffer.extend(b"\n")
-        return msg_buffer
+        encoder.encode_into(message.to_dict(), self.encode_msg_buffer)
+        self.encode_msg_buffer.extend(b"\n")
+        return self.encode_msg_buffer
 
     def write_message(self, message: Message) -> None:
         """Write a message to stdout.
@@ -196,8 +181,8 @@ class Tapmssql(SQLTap):
         Args:
             message: The message to write.
         """
-        sys.stdout.buffer.write(self.format_message(message))
-        sys.stdout.buffer.flush()
+        self.default_output.write(self.format_message(message))
+        self.default_output.flush()
 
 if __name__ == "__main__":
     Tapmssql.cli()
