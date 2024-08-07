@@ -12,7 +12,6 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Iterable, Iterator
 from uuid import uuid4
 
-import pendulum
 import pyodbc
 import sqlalchemy as sa
 from singer_sdk import SQLConnector, SQLStream
@@ -22,6 +21,7 @@ from sqlalchemy.engine.url import URL
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
+UTC = datetime.timezone.utc
 
 class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
@@ -394,7 +394,7 @@ class CustomJSONEncoder(json.JSONEncoder):
         """
         # Datetime in ISO format
         if isinstance(obj, datetime.datetime):
-            return pendulum.instance(obj).isoformat()
+            return (obj.replace(tzinfo=UTC) if obj.tzinfo is None else obj).isoformat("T")
 
         # Date in ISO format
         if isinstance(obj, datetime.date):
