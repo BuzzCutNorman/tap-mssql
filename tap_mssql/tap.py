@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-import typing as t
 from typing import TYPE_CHECKING
 
 from singer_sdk import SQLTap
