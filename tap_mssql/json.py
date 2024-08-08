@@ -2,7 +2,6 @@
 """Searialize to and Desearilaize from JSON via msgspec."""
 from __future__ import annotations
 
-import datetime
 import decimal
 import typing as t
 
@@ -10,7 +9,7 @@ import msgspec
 
 
 def _default_encoding(obj: t.Any) -> t.Any:  # noqa: ANN401
-    """Default JSON encoder.
+    """Encoding helper for non native types.
 
     Args:
         obj: The object to encode.
@@ -18,7 +17,7 @@ def _default_encoding(obj: t.Any) -> t.Any:  # noqa: ANN401
     Returns:
         The encoded object.
     """
-    return obj.isoformat(sep="T") if isinstance(obj, datetime.datetime) else str(obj)
+    return str(obj)
 
 def _default_decoding(type: type, obj: t.Any) -> t.Any:  # noqa: ARG001, A002, ANN401
     """Decoding type helper for non native types.
@@ -59,3 +58,19 @@ def serialize_json(obj: object, **kwargs: t.Any) -> str:
         A string of serialized json.
     """
     return encoder.encode(obj).decode()
+
+msg_buffer = bytearray(64)
+
+def serialize_jsonl(obj: object, **kwargs: t.Any) -> bytes:
+        """Serialize a dictionary into a line of jsonl.
+
+        Args:
+            obj: A Python object usually a dict.
+            **kwargs: Optional key word arguments.
+
+        Returns:
+            A bytes of serialized json.
+        """
+        encoder.encode_into(obj, msg_buffer)
+        msg_buffer.extend(b"\n")
+        return msg_buffer
