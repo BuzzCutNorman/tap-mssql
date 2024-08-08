@@ -18,6 +18,8 @@ from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from sqlalchemy.engine.url import URL
 
+from .json import deserialize_json, serialize_json
+
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
@@ -36,6 +38,9 @@ class MSSQLConnector(SQLConnector):
         # This allows SQLA to manage to connection pool
         if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
+
+        self.deserialize_json = deserialize_json
+        self.serialize_json = serialize_json
 
         super().__init__(config, sqlalchemy_url)
 
