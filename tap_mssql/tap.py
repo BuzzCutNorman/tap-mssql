@@ -21,7 +21,6 @@ class Tapmssql(SQLTap):
     name = "tap-mssql"
     default_stream_class = MSSQLStream
     default_output = sys.stdout.buffer
-    encode_msg_buffer = bytearray(64)
 
     config_jsonschema = th.PropertiesList(
         th.Property(
