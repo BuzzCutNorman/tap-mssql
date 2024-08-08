@@ -9,7 +9,7 @@ from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
 from .client import MSSQLStream
-from .json import encoder
+from .json import serialize_jsonl
 
 if TYPE_CHECKING:
     from singer_sdk._singerlib.encoding._simple import Message
@@ -161,7 +161,7 @@ class Tapmssql(SQLTap):
     ).to_dict()
 
 
-    def serialize_message(self, message: Message) -> str:
+    def serialize_message(self, message: Message) -> str | bytes:
         """Serialize a dictionary into a line of json.
 
         Args:
@@ -170,9 +170,7 @@ class Tapmssql(SQLTap):
         Returns:
             A string of serialized json.
         """
-        encoder.encode_into(message.to_dict(), self.encode_msg_buffer)
-        self.encode_msg_buffer.extend(b"\n")
-        return self.encode_msg_buffer
+        return serialize_jsonl(message.to_dict())
 
     def write_message(self, message: Message) -> None:
         """Write a message to stdout.
