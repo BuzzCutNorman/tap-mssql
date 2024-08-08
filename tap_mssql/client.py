@@ -6,9 +6,7 @@ from __future__ import annotations
 
 import datetime
 import gzip
-import json
 from base64 import b64encode
-from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Iterable, Iterator
 from uuid import uuid4
 
@@ -18,12 +16,11 @@ from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from sqlalchemy.engine.url import URL
 
-from .json import deserialize_json, serialize_json
+from .json import deserialize_json, serialize_json, serialize_jsonl
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
-UTC = datetime.timezone.utc
 
 class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
@@ -384,44 +381,8 @@ class MSSQLConnector(SQLConnector):
         return SQLConnector.to_sql_type(jsonschema_type)
 
 
-class CustomJSONEncoder(json.JSONEncoder):
-    """Custom class extends json.JSONEncoder."""
-
-    # Override default() method
-    def default(self, obj: Any) -> Any:  # noqa: ANN401
-        """Customized default method.
-
-        Args:
-            obj: The obj you want to encode.
-
-        Returns:
-            The properly converted obj.
-        """
-        # Datetime in ISO format
-        if isinstance(obj, datetime.datetime):
-            return (obj.replace(tzinfo=UTC) if obj.tzinfo is None else obj).isoformat("T")
-
-        # Date in ISO format
-        if isinstance(obj, datetime.date):
-            return obj.isoformat()
-
-        # Time in ISO format truncated to the second to pass
-        # json-schema validation
-        if isinstance(obj, datetime.time):
-            return obj.isoformat(timespec="seconds")
-
-        # JSON Encoder doesn't know Decimals but it
-        # does know float so we convert Decimal to float
-        if isinstance(obj, Decimal):
-            return float(obj)
-
-        # Default behavior for all other types
-        return super().default(obj)
-
 class JSONLinesBatcher(BaseBatcher):
     """JSON Lines Record Batcher."""
-
-    encoder_class = CustomJSONEncoder
 
     def get_batches(
         self,
@@ -453,8 +414,7 @@ class JSONLinesBatcher(BaseBatcher):
                     mode="wb",
                 ) as gz:
                     gz.writelines(
-                        (json.dumps(record, cls=self.encoder_class, default=str) + "\n").encode()
-                        for record in chunk
+                        serialize_jsonl(record) for record in chunk
                     )
                 file_url = fs.geturl(filename)
             yield [file_url]
