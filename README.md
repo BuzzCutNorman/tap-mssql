@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+2024-08-12 Pendulum Dependency Fix: Arch had been saying it was removing `pendulum` as a dependency for month. I being a procrastinator didn't change tap-mssql  to use another library for dealing with dates, because I have plenty of time. Singer-SDK 0.39.1 removed `pendulum` as they said they would and well I didn't 😅. Luckly Anna Nylander swooped in to save the day by adding `pendulum` as a dependancy for tap-mssql. 🎉🥳🎉
+
 **2024-08-05 Upgraded to Meltano Singer-SDK 0.39.0**
 
 **2024-05-07 Upgraded to Meltano Singer-SDK 0.36.1**
