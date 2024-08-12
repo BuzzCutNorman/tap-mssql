@@ -14,7 +14,6 @@ import pyodbc
 import sqlalchemy as sa
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
-from sqlalchemy.engine.url import URL
 
 from .json import deserialize_json, serialize_json, serialize_jsonl
 
@@ -52,7 +51,7 @@ class MSSQLConnector(SQLConnector):
         """
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
 
-        config_url = URL.create(
+        config_url = sa.URL.create(
             url_drivername,
             config.get("user"),
             config.get("password"),
