@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import datetime
 import gzip
+import typing as t
 from base64 import b64encode
-from typing import TYPE_CHECKING, Any, Iterable, Iterator
 from uuid import uuid4
 
 import pyodbc
@@ -17,7 +17,8 @@ from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 
 from .json import deserialize_json, serialize_json, serialize_jsonl
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from singer_sdk.helpers.types import Context
     from sqlalchemy.engine import Engine
 
 
@@ -40,7 +41,7 @@ class MSSQLConnector(SQLConnector):
 
         super().__init__(config, sqlalchemy_url)
 
-    def get_sqlalchemy_url(self, config: dict[str, Any]) -> str:
+    def get_sqlalchemy_url(self, config: dict[str, t.Any]) -> str:
         """Return the SQLAlchemy URL string.
 
         Args:
@@ -98,7 +99,7 @@ class MSSQLConnector(SQLConnector):
                 str  # noqa: ANN401
                 | sa.types.TypeEngine
                 | type[sa.types.TypeEngine]
-                | Any
+                | t.Any
             ),
      ) -> None:
         """Returns a JSON Schema equivalent for the given SQL type.
@@ -125,7 +126,7 @@ class MSSQLConnector(SQLConnector):
                 str  # noqa: ANN401
                 | sa.types.TypeEngine
                 | type[sa.types.TypeEngine]
-                | Any
+                | t.Any
             ),
      ) -> dict:
         """Returns a JSON Schema equivalent for the given SQL type.
@@ -168,7 +169,7 @@ class MSSQLConnector(SQLConnector):
                 str  # noqa: ANN401
                 | sa.types.TypeEngine
                 | type[sa.types.TypeEngine]
-                | Any
+                | t.Any
             ),
      ) -> dict:
         """Returns a JSON Schema equivalent for the given SQL type.
@@ -196,10 +197,10 @@ class MSSQLConnector(SQLConnector):
             sql_type, sa.types.TypeEngine
         ):
             sql_type_name = sql_type.__name__
-        else:
-            raise TypeError(
-                "Expected `str` or a SQLAlchemy `TypeEngine` object or type."
-             )
+        else:  # pragma: no cover
+            msg = "Expected `str` or a SQLAlchemy `TypeEngine` object or type."
+            # TODO: this should be a TypeError, but it's a breaking change.
+            raise ValueError(msg)  # noqa: TRY004
 
         # Add in the length of the
         if sql_type_name in ["CHAR", "NCHAR", "VARCHAR", "NVARCHAR"]:
@@ -385,8 +386,8 @@ class JSONLinesBatcher(BaseBatcher):
 
     def get_batches(
         self,
-        records: Iterator[dict],
-    ) -> Iterator[list[str]]:
+        records: t.Iterator[dict],
+    ) -> t.Iterator[list[str]]:
         """Yield manifest of batches.
 
         Args:
@@ -470,7 +471,7 @@ class MSSQLStream(SQLStream):
 
         return record
 
-    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
+    def get_records(self, context: Context  | None) -> t.Iterable[dict[str, t.Any]]:
         """Return a generator of record-type dictionary objects.
 
         If the stream has a replication_key value defined, records will be
@@ -561,8 +562,6 @@ class MSSQLStream(SQLStream):
 
         with self.connector._connect() as conn:  # noqa: SLF001
             for record in conn.execute(query).mappings():
-                # TODO: Standardize record mapping type  # noqa: TD002, FIX002
-                # https://github.com/meltano/sdk/issues/2096
                 transformed_record = self.post_process(dict(record))
                 if transformed_record is None:
                     # Record filtered out during post_process()
