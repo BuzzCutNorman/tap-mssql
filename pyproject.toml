@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tap-mssql"
-version = "0.0.5"
+version = "0.1.0"
 description = "`tap-mssql` is a Singer tap for mssql, built with the Meltano Singer SDK."
 readme = "README.md"
 authors = ["Dan Norman <buzzcutnorman@gmail.com>"]
