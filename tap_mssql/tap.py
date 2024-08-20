@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import sys
+from typing import TYPE_CHECKING
+
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_mssql.client import MSSQLStream
+from .client import MSSQLStream
+from .json import serialize_jsonl
+
+if TYPE_CHECKING:
+    from singer_sdk._singerlib.encoding._simple import Message
 
 
 class Tapmssql(SQLTap):
@@ -13,6 +20,7 @@ class Tapmssql(SQLTap):
 
     name = "tap-mssql"
     default_stream_class = MSSQLStream
+    default_output = sys.stdout.buffer
 
     config_jsonschema = th.PropertiesList(
         th.Property(
@@ -151,6 +159,26 @@ class Tapmssql(SQLTap):
         ),
     ).to_dict()
 
+
+    def serialize_message(self, message: Message) -> str | bytes:
+        """Serialize a dictionary into a line of json.
+
+        Args:
+            message: A Singer message object.
+
+        Returns:
+            A string of serialized json.
+        """
+        return serialize_jsonl(message.to_dict())
+
+    def write_message(self, message: Message) -> None:
+        """Write a message to stdout.
+
+        Args:
+            message: The message to write.
+        """
+        self.default_output.write(self.format_message(message))
+        self.default_output.flush()
 
 if __name__ == "__main__":
     Tapmssql.cli()
