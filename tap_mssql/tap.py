@@ -54,13 +54,13 @@ class Tapmssql(SQLTap):
             "user",
             th.StringType,
             description="The User Account who has been granted access to the SQL Server",  # noqa: E501
-            required=True
+            # required=True
         ),
         th.Property(
             "password",
             th.StringType,
             description="The Password for the User account",
-            required=True,
+            # required=True,
             secret=True
         ),
         th.Property(
