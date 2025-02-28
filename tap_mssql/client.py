@@ -53,9 +53,9 @@ class MSSQLConnector(SQLConnector):
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
 
         config_url = sa.URL.create(
-            url_drivername,
-            config.get("user"),
-            config.get("password"),
+            drivername=url_drivername,
+            username=config.get("user"),
+            password=config.get("password"),
             host=config.get("host"),
             database=config.get("database")
         )
