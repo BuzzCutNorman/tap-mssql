@@ -1532,6 +1532,10 @@ dev = [
     { name = "pytest" },
     { name = "singer-sdk", extra = ["testing"] },
 ]
+test = [
+    { name = "pytest" },
+    { name = "singer-sdk", extra = ["testing"] },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1545,7 +1549,11 @@ provides-extras = ["s3"]
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=8" },
-    { name = "singer-sdk", extras = ["testing"], specifier = "~=0.46.4" },
+    { name = "singer-sdk", extras = ["testing"] },
+]
+test = [
+    { name = "pytest", specifier = ">=8" },
+    { name = "singer-sdk", extras = ["testing"] },
 ]
 
 [[package]]

@@ -2,16 +2,15 @@
 name = "tap-mssql"
 version = "0.1.0"
 description = "`tap-mssql` is a Singer tap for mssql, built with the Meltano Singer SDK."
-authors = [{ name = "Dan Norman", email = "buzzcutnorman@gmail.com" }]
-requires-python = ">=3.9"
 readme = "README.md"
-license = "MIT"
+authors = [{ name = "Dan Norman", email = "buzzcutnorman@gmail.com" }]
 keywords = [
     "ELT",
     "mssql",
 ]
 classifiers = [
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -19,6 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
+license = "MIT"
+license-files = [ "LICENSE.md" ]
+requires-python = ">=3.9"
 dependencies = [
     "singer-sdk[msgspec]~=0.46.4",
     "pyodbc>=5.2.0,<6",
@@ -35,8 +37,17 @@ tap-mssql = "tap_mssql.tap:Tapmssql.cli"
 
 [dependency-groups]
 dev = [
+    { include-group = "test" },
+]
+test = [
     "pytest>=8",
-    "singer-sdk[testing]~=0.46.4",
+
+    "singer-sdk[testing]",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--durations=10",
 ]
 
 [tool.mypy]
@@ -46,7 +57,7 @@ plugins = "sqlmypy"
 
 [tool.ruff]
 src = ["tap_mssql"]
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.lint]
 ignore = [
@@ -59,9 +70,6 @@ select = ["ALL"]
 
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
-
-[tool.ruff.lint.isort]
-known-first-party = ["tap_mssql"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
