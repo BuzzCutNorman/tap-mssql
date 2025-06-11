@@ -527,7 +527,15 @@ class MSSQLStream(SQLStream):
                 start_val = self.get_starting_replication_key_value(context)
 
             if start_val:
-                query = query.where(replication_key_col >= start_val)
+                if replication_key_col.type.python_type == datetime.date:
+                    query = (
+                        query
+                        .where(replication_key_col >= start_val)
+                        .where(replication_key_col < (datetime.datetime.now()+datetime.timedelta(days=1)).strftime('%Y%m%d'))
+                        )
+                else:
+                    query = query.where(replication_key_col >= start_val)
+
 
         if self.ABORT_AT_RECORD_COUNT is not None:
             # Limit record count to one greater than the abort threshold.
