@@ -17,8 +17,7 @@ from azure import identity
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from sqlalchemy import event
-
-from .json import deserialize_json, serialize_json, serialize_jsonl
+from singer_sdk.contrib.msgspec import serialize_jsonl
 
 if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
@@ -56,9 +55,6 @@ class MSSQLConnector(SQLConnector):
         # This allows SQLA to manage to connection pool
         if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
-
-        self.deserialize_json = deserialize_json
-        self.serialize_json = serialize_json
 
         super().__init__(config, sqlalchemy_url)
 
@@ -141,8 +137,8 @@ class MSSQLConnector(SQLConnector):
 
         return self.org_to_jsonschema_type(sql_type)
 
-    @staticmethod
     def org_to_jsonschema_type(
+            self,
             sql_type: (
                 str  # noqa: ANN401
                 | sa.types.TypeEngine
@@ -182,10 +178,11 @@ class MSSQLConnector(SQLConnector):
         if str(sql_type) in ["ROWVERSION", "TIMESTAMP"]:
             sql_type = "string"
 
-        return SQLConnector.to_jsonschema_type(sql_type)
+        return SQLConnector.to_jsonschema_type(self=self,sql_type=sql_type)
 
-    @staticmethod
+
     def hd_to_jsonschema_type(
+            self,
             sql_type: (
                 str  # noqa: ANN401
                 | sa.types.TypeEngine
@@ -380,7 +377,7 @@ class MSSQLConnector(SQLConnector):
                 "maximum": 3.40e38
             }
 
-        return SQLConnector.to_jsonschema_type(sql_type)
+        return SQLConnector.to_jsonschema_type(self=self,sql_type=sql_type)
 
     @staticmethod
     def to_sql_type(jsonschema_type: dict) -> sa.types.TypeEngine:
