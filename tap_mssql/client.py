@@ -16,8 +16,8 @@ import sqlalchemy as sa
 from azure import identity
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
-from sqlalchemy import event
 from singer_sdk.contrib.msgspec import serialize_jsonl
+from sqlalchemy import event
 
 if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
