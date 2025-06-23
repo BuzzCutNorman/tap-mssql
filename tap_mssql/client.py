@@ -6,20 +6,41 @@ from __future__ import annotations
 
 import datetime
 import gzip
+import struct
 import typing as t
 from base64 import b64encode
 from uuid import uuid4
 
 import pyodbc
 import sqlalchemy as sa
+from azure import identity
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from singer_sdk.contrib.msgspec import serialize_jsonl
+from sqlalchemy import event
 
 if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
     from sqlalchemy.engine import Engine
 
+# Connection option for access tokens, as defined in msodbcsql.h
+SQL_COPT_SS_ACCESS_TOKEN = 1256
+TOKEN_ENCODE_CODEC = "UTF-16-LE"
+TOKEN_URL = "https://database.windows.net/"  # The token URL for any Azure SQL database
+
+azure_credentials = identity.DefaultAzureCredential()
+
+# from https://docs.sqlalchemy.org/en/20/core/engines.html#generating-dynamic-authentication-tokens
+@event.listens_for(sa.Engine, "do_connect")
+def provide_token(dialect, connection_record, cargs, cparams) -> None:
+    """Called before the engine creates a new connection. Injects an EntraID token into the connection parameters."""
+    # remove the "Trusted_Connection" parameter that SQLAlchemy adds
+    cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
+    # create token credential
+    token_bytes = azure_credentials.get_token(TOKEN_URL).token.encode(TOKEN_ENCODE_CODEC)
+    token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+    # apply it to keyword arguments
+    cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
 
 class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
@@ -49,21 +70,21 @@ class MSSQLConnector(SQLConnector):
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
 
         config_url = sa.URL.create(
-            url_drivername,
-            config.get("user"),
-            config.get("password"),
+            drivername=url_drivername,
+            username=config.get("user"),
+            password=config.get("password"),
             host=config.get("host"),
             database=config.get("database")
         )
 
         if "port" in config:
             config_url = config_url.set(port=config.get("port"))
-
+        # self.logger.info(config.get("sqlalchemy_url_query"))
         if "sqlalchemy_url_query" in config:
             config_url = config_url.update_query_dict(
                 config.get("sqlalchemy_url_query")
                 )
-
+        # self.logger.info(f"This is the url: {config_url}")
         return (config_url)
 
     def create_engine(self) -> Engine:

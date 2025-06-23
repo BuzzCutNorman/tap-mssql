@@ -25,6 +25,7 @@ dependencies = [
     "singer-sdk[msgspec]~=0.46.4",
     "pyodbc>=5.2.0,<6",
     "pymssql>=2.3.4,<3",
+    "azure-identity>=1.23.0",
 ]
 
 [project.optional-dependencies]
