@@ -67,6 +67,10 @@ class MSSQLConnector(SQLConnector):
         Returns:
             The URL as a string.
         """
+        if config.get("hard_coded_sqla_url"):
+            # self.logger.info(f"This is the url: {config.get("hard_coded_sqla_url")}")
+            return config.get("hard_coded_sqla_url")
+
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
 
         config_url = sa.URL.create(

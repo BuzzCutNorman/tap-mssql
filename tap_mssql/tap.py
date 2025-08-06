@@ -18,10 +18,15 @@ class Tapmssql(SQLTap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
+            "hard_coded_sqla_url",
+            th.StringType,
+            description="Hard coded SQLAlchamey URL",
+        ),
+        th.Property(
             "dialect",
             th.StringType,
             description="The Dialect of SQLAlchamey",
-            required=True,
+            # required=True,
             allowed_values=["mssql"],
             default="mssql"
         ),
@@ -29,7 +34,7 @@ class Tapmssql(SQLTap):
             "driver_type",
             th.StringType,
             description="The Python Driver you will be using to connect to the SQL server",  # noqa: E501
-            required=True,
+            # required=True,
             allowed_values=["pyodbc", "pymssql"],
             default="pymssql"
         ),
@@ -37,7 +42,7 @@ class Tapmssql(SQLTap):
             "host",
             th.StringType,
             description="The FQDN of the Host serving out the SQL Instance",
-            required=True
+            # required=True
         ),
         th.Property(
             "port",
@@ -61,7 +66,7 @@ class Tapmssql(SQLTap):
             "database",
             th.StringType,
             description="The Default database for this connection",
-            required=True
+            # required=True
         ),
         th.Property(
             "sqlalchemy_eng_params",
