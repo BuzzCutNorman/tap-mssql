@@ -13,7 +13,7 @@ from uuid import uuid4
 
 import pyodbc
 import sqlalchemy as sa
-# from azure import identity
+from azure import identity
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from singer_sdk.contrib.msgspec import serialize_jsonl
@@ -23,24 +23,24 @@ if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
     from sqlalchemy.engine import Engine
 
-# # Connection option for access tokens, as defined in msodbcsql.h
-# SQL_COPT_SS_ACCESS_TOKEN = 1256
-# TOKEN_ENCODE_CODEC = "UTF-16-LE"
-# TOKEN_URL = "https://database.windows.net/"  # The token URL for any Azure SQL database
+# Connection option for access tokens, as defined in msodbcsql.h
+SQL_COPT_SS_ACCESS_TOKEN = 1256
+TOKEN_ENCODE_CODEC = "UTF-16-LE"
+TOKEN_URL = "https://database.windows.net/"  # The token URL for any Azure SQL database
 
-# azure_credentials = identity.DefaultAzureCredential()
+azure_credentials = identity.DefaultAzureCredential()
 
-# # from https://docs.sqlalchemy.org/en/20/core/engines.html#generating-dynamic-authentication-tokens
-# @event.listens_for(sa.Engine, "do_connect")
-# def provide_token(dialect, connection_record, cargs, cparams) -> None:
-#     """Called before the engine creates a new connection. Injects an EntraID token into the connection parameters."""
-#     # remove the "Trusted_Connection" parameter that SQLAlchemy adds
-#     cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
-#     # create token credential
-#     token_bytes = azure_credentials.get_token(TOKEN_URL).token.encode(TOKEN_ENCODE_CODEC)
-#     token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
-#     # apply it to keyword arguments
-#     cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
+# from https://docs.sqlalchemy.org/en/20/core/engines.html#generating-dynamic-authentication-tokens
+@event.listens_for(sa.Engine, "do_connect")
+def provide_token(dialect, connection_record, cargs, cparams) -> None:
+    """Called before the engine creates a new connection. Injects an EntraID token into the connection parameters."""
+    # remove the "Trusted_Connection" parameter that SQLAlchemy adds
+    cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
+    # create token credential
+    token_bytes = azure_credentials.get_token(TOKEN_URL).token.encode(TOKEN_ENCODE_CODEC)
+    token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+    # apply it to keyword arguments
+    cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
 
 class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
