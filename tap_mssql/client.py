@@ -68,7 +68,7 @@ class MSSQLConnector(SQLConnector):
             The URL as a string.
         """
         if config.get("hard_coded_sqla_url"):
-            # self.logger.info(f"This is the url: {config.get('hard_coded_sqla_url')}")
+            self.logger.info(f"This is the url: {config.get('hard_coded_sqla_url')}")
             return config.get("hard_coded_sqla_url")
 
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
@@ -88,7 +88,7 @@ class MSSQLConnector(SQLConnector):
             config_url = config_url.update_query_dict(
                 config.get("sqlalchemy_url_query")
                 )
-        # self.logger.info(f"This is the url: {config_url}")
+        self.logger.info(f"This is the url: {config_url}")
         return (config_url)
 
     def create_engine(self) -> Engine:
