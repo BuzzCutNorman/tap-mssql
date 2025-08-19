@@ -28,19 +28,20 @@ SQL_COPT_SS_ACCESS_TOKEN = 1256
 TOKEN_ENCODE_CODEC = "UTF-16-LE"
 TOKEN_URL = "https://database.windows.net/"  # The token URL for any Azure SQL database
 
-azure_credentials = identity.DefaultAzureCredential()
-
 # from https://docs.sqlalchemy.org/en/20/core/engines.html#generating-dynamic-authentication-tokens
-@event.listens_for(sa.Engine, "do_connect")
-def provide_token(dialect, connection_record, cargs, cparams) -> None:
-    """Called before the engine creates a new connection. Injects an EntraID token into the connection parameters."""
-    # remove the "Trusted_Connection" parameter that SQLAlchemy adds
-    cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
-    # create token credential
-    token_bytes = azure_credentials.get_token(TOKEN_URL).token.encode(TOKEN_ENCODE_CODEC)
-    token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
-    # apply it to keyword arguments
-    cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
+def make_provide_token(
+    azure_credentials: identity.DefaultAzureCredential,
+) -> t.Callable[[t.Any, t.Any, t.Any, t.Any], None]:
+    def provide_token(dialect, connection_record, cargs, cparams) -> None:
+        """Called before the engine creates a new connection. Injects an EntraID token into the connection parameters."""
+        # remove the "Trusted_Connection" parameter that SQLAlchemy adds
+        cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
+        # create token credential
+        token_bytes = azure_credentials.get_token(TOKEN_URL).token.encode(TOKEN_ENCODE_CODEC)
+        token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+        # apply it to keyword arguments
+        cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
+    return provide_token
 
 class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
@@ -55,6 +56,10 @@ class MSSQLConnector(SQLConnector):
         # This allows SQLA to manage to connection pool
         if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
+
+        if config.get("azure_access_tokens"):
+            azure_credentials: identity.DefaultAzureCredential = identity.DefaultAzureCredential()
+            event.listen(sa.Engine, "do_connect", make_provide_token(azure_credentials))
 
         super().__init__(config, sqlalchemy_url)
 

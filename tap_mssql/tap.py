@@ -42,7 +42,7 @@ class Tapmssql(SQLTap):
             "host",
             th.StringType,
             description="The FQDN of the Host serving out the SQL Instance",
-            # required=True
+            required=True
         ),
         th.Property(
             "port",
@@ -66,7 +66,13 @@ class Tapmssql(SQLTap):
             "database",
             th.StringType,
             description="The Default database for this connection",
-            # required=True
+            required=True
+        ),
+        th.Property(
+            "azure_access_tokens",
+            th.BooleanType,
+            description="Obtain Azure Access Tokens when connecting",
+            default=False
         ),
         th.Property(
             "sqlalchemy_eng_params",
