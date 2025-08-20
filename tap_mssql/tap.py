@@ -70,9 +70,9 @@ class Tapmssql(SQLTap):
         ),
         th.Property(
             "azure_access_tokens",
-            th.BooleanType,
-            description="Obtain Azure Access Tokens when connecting",
-            default=False
+            th.StringType,
+            description="Obtain Azure Access Tokens when connecting: True, False",
+            default="False"
         ),
         th.Property(
             "sqlalchemy_eng_params",

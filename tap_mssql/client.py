@@ -57,7 +57,7 @@ class MSSQLConnector(SQLConnector):
         if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
 
-        if config.get("azure_access_tokens"):
+        if config.get("azure_access_tokens") == "True":
             azure_credentials: identity.DefaultAzureCredential = identity.DefaultAzureCredential()
             event.listen(sa.Engine, "do_connect", make_provide_token(azure_credentials))
 
