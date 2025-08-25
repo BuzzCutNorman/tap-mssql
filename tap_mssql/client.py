@@ -57,7 +57,7 @@ class MSSQLConnector(SQLConnector):
         if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
 
-        if config.get("azure_access_tokens") == "True":
+        if config.get("azure_access_tokens").lower() == "true":
             azure_credentials: identity.DefaultAzureCredential = identity.DefaultAzureCredential()
             event.listen(sa.Engine, "do_connect", make_provide_token(azure_credentials))
 
@@ -72,10 +72,6 @@ class MSSQLConnector(SQLConnector):
         Returns:
             The URL as a string.
         """
-        if config.get("hard_coded_sqla_url"):
-            self.logger.info(f"This is the url: {config.get('hard_coded_sqla_url')}")
-            return config.get("hard_coded_sqla_url")
-
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
 
         config_url = sa.URL.create(

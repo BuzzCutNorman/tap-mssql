@@ -18,15 +18,10 @@ class Tapmssql(SQLTap):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "hard_coded_sqla_url",
-            th.StringType,
-            description="Hard coded SQLAlchamey URL",
-        ),
-        th.Property(
             "dialect",
             th.StringType,
             description="The Dialect of SQLAlchamey",
-            # required=True,
+            required=True,
             allowed_values=["mssql"],
             default="mssql"
         ),
@@ -34,7 +29,7 @@ class Tapmssql(SQLTap):
             "driver_type",
             th.StringType,
             description="The Python Driver you will be using to connect to the SQL server",  # noqa: E501
-            # required=True,
+            required=True,
             allowed_values=["pyodbc", "pymssql"],
             default="pymssql"
         ),
@@ -53,13 +48,11 @@ class Tapmssql(SQLTap):
             "user",
             th.StringType,
             description="The User Account who has been granted access to the SQL Server",  # noqa: E501
-            # required=True
         ),
         th.Property(
             "password",
             th.StringType,
             description="The Password for the User account",
-            # required=True,
             secret=True
         ),
         th.Property(
@@ -71,7 +64,7 @@ class Tapmssql(SQLTap):
         th.Property(
             "azure_access_tokens",
             th.StringType,
-            description="Obtain Azure Access Tokens when connecting: True, False",
+            description="Obtain Azure Access Tokens when connecting: \'True\', \'False\'",
             default="False"
         ),
         th.Property(
