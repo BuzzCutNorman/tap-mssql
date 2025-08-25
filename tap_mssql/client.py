@@ -32,8 +32,16 @@ TOKEN_URL = "https://database.windows.net/"  # The token URL for any Azure SQL d
 def make_provide_token(
     azure_credentials: identity.DefaultAzureCredential,
 ) -> t.Callable[[t.Any, t.Any, t.Any, t.Any], None]:
+    """A function to provide an Azure EntraID access token for SQL Server connections.
+
+    Args:
+        azure_credentials: An instance of DefaultAzureCredential used to obtain the access token.
+
+    Returns:
+        A function that obtains access tokens for connection.
+    """
     def provide_token(dialect, connection_record, cargs, cparams) -> None:
-        """Called before the engine creates a new connection. Injects an EntraID token into the connection parameters."""
+        """Creates a set of correct connection paramaters with EntraID token."""
         # remove the "Trusted_Connection" parameter that SQLAlchemy adds
         cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
         # create token credential
@@ -84,12 +92,12 @@ class MSSQLConnector(SQLConnector):
 
         if "port" in config:
             config_url = config_url.set(port=config.get("port"))
-        # self.logger.info(config.get("sqlalchemy_url_query"))
+
         if "sqlalchemy_url_query" in config:
             config_url = config_url.update_query_dict(
                 config.get("sqlalchemy_url_query")
                 )
-        self.logger.info(f"This is the url: {config_url}")
+
         return (config_url)
 
     def create_engine(self) -> Engine:
