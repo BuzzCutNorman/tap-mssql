@@ -6,7 +6,7 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
-**2025-08-25 Azure Access Tokens:**  In issue [#82](https://github.com/BuzzCutNorman/tap-mssql/issues/82) Alec and Josuha requested the ability to autenticate with Azure SQL Server Managed Instances using Azure Access Tokens. They gave me great links to examples and SQLAlchemy had a section with more code examples. After months of Josuha testing over and over and over and over again 😅 the feature is working.  If you want to give it a try use the config option `azure_access_tokens = 'True'`.  Huge thanks 🙏 to Josuha and his coworkers.
+**2025-08-26 Azure Access Tokens:**  In issue [#82](https://github.com/BuzzCutNorman/tap-mssql/issues/82) Alec and Josuha requested the ability to authenticate with Azure SQL Server Managed Instances using Azure Access Tokens. They gave me great links to examples and SQLAlchemy had a section with more code examples. After months of Josuha testing over and over and over and over again 😅 the feature is working.  If you want to give it a try use the config option `azure_access_tokens = 'True'`.  Huge thanks 🙏 to Josuha and his coworkers.
 
 **2024-06-23 Upgraded to Meltano Singer-SDK 0.46.4:** Edger at Arch implemented an MsgSpecWriter class in the SDK.  I updated tap-mssql to utilize the SDK's implementation of msgspec.  Thanks Edger 🙏.
 
@@ -100,7 +100,7 @@ The `pyodbc` driver has added support for a “fast executemany” mode of execu
 meltano config tap-mssql set sqlalchemy_eng_params.fast_executemany "True"
 ```
 
-If you are connecting to a Azure SQL Server Managed Instance and you need to use Azure Access Tokens you will want to set the follwing options only `host`, `database` and `azure_access_tokens`.  Here is the command you can use to set `azure_access_tokens` to the string of `'True'`.
+If you are connecting to a Azure SQL Server Managed Instance and you need to use Azure Access Tokens you will want to set the following options only `host`, `database` and `azure_access_tokens`.  Here is the command you can use to set `azure_access_tokens` to the string of `'True'`.
 ```bash
 meltano config tap-mssql set azure_access_tokens 'True'
 ```
