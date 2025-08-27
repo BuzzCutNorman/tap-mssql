@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2025-08-26 Azure Access Tokens:**  In issue [#82](https://github.com/BuzzCutNorman/tap-mssql/issues/82) Alec and Josuha requested the ability to authenticate with Azure SQL Server Managed Instances using Azure Access Tokens. They gave me great links to examples and SQLAlchemy had a section with more code examples. After months of Josuha testing over and over and over and over again 😅 the feature is working.  If you want to give it a try use the config option `azure_access_tokens = 'True'`.  Huge thanks 🙏 to Josuha and his coworkers.
+
 **2024-06-23 Upgraded to Meltano Singer-SDK 0.46.4:** Edger at Arch implemented an MsgSpecWriter class in the SDK.  I updated tap-mssql to utilize the SDK's implementation of msgspec.  Thanks Edger 🙏.
 
 **2024-08-20 msgspec:**  I have been working on getting a quicker JSON encoder in place for a while and thanks to Edger at Arch I am able too.  The library I switched to is [msgspec]( https://jcristharif.com/msgspec/).  It is lightweight and fast.  Big Thank You 🙏 to Jim Crist-Harif for writing and maintaining `msgspec`.  I also removed `pedulum` and am using phython datetime at the moment.    
@@ -97,6 +99,12 @@ The `pyodbc` driver has added support for a “fast executemany” mode of execu
 ```bash
 meltano config tap-mssql set sqlalchemy_eng_params.fast_executemany "True"
 ```
+
+If you are connecting to a Azure SQL Server Managed Instance and you need to use Azure Access Tokens you will want to set the following options only `host`, `database` and `azure_access_tokens`.  Here is the command you can use to set `azure_access_tokens` to the string of `'True'`.
+```bash
+meltano config tap-mssql set azure_access_tokens 'True'
+```
+
 ### Accepted Config Options
 
 <!--
@@ -116,14 +124,15 @@ tap-mssql --about --format=markdown
 | driver_type          | True     | pymssql | The Python Driver you will be using to connect to the SQL server |
 | host                 | True     | None    | The FQDN of the Host serving out the SQL Instance |
 | port                 | False    | None    | The port on which SQL awaiting connection |
-| user                 | True     | None    | The User Account who has been granted access to the SQL Server |
-| password             | True     | None    | The Password for the User account |
+| user                 | False    | None    | The User Account who has been granted access to the SQL Server |
+| password             | False    | None    | The Password for the User account |
 | database             | True     | None    | The Default database for this connection |
+| azure_access_tokens  | False    | 'False' | Obtain Azure Access Tokens when connecting: 'True', 'False'
 | sqlalchemy_eng_params| False    | None    | SQLAlchemy Engine Paramaters: fast_executemany, future |
 | sqlalchemy_url_query | False    | None    | SQLAlchemy URL Query options: driver, TrustServerCertificate |
 | batch_config         | False    | None    | Optional Batch Message configuration |
 | start_date           | False    | None    | The earliest record date to sync |
-| hd_jsonschema_types  | False    | False | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
+| hd_jsonschema_types  | False    | False   | Turn on Higher Defined(HD) JSON Schema types to assist Targets |
 | stream_maps          | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config    | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled   | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |

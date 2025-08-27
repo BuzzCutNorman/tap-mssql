@@ -6,20 +6,50 @@ from __future__ import annotations
 
 import datetime
 import gzip
+import struct
 import typing as t
 from base64 import b64encode
 from uuid import uuid4
 
 import pyodbc
 import sqlalchemy as sa
+from azure import identity
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from singer_sdk.contrib.msgspec import serialize_jsonl
+from sqlalchemy import event
 
 if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
     from sqlalchemy.engine import Engine
 
+# Connection option for access tokens, as defined in msodbcsql.h
+SQL_COPT_SS_ACCESS_TOKEN = 1256
+TOKEN_ENCODE_CODEC = "UTF-16-LE"
+TOKEN_URL = "https://database.windows.net/"  # The token URL for any Azure SQL database
+
+# from https://docs.sqlalchemy.org/en/20/core/engines.html#generating-dynamic-authentication-tokens
+def make_provide_token(
+    azure_credentials: identity.DefaultAzureCredential,
+) -> t.Callable[[t.Any, t.Any, t.Any, t.Any], None]:
+    """A function to provide an Azure EntraID access token for SQL Server connections.
+
+    Args:
+        azure_credentials: An instance of DefaultAzureCredential used to obtain the access token.
+
+    Returns:
+        A function that obtains access tokens for connection.
+    """
+    def provide_token(dialect, connection_record, cargs, cparams) -> None:
+        """Creates a set of correct connection paramaters with EntraID token."""
+        # remove the "Trusted_Connection" parameter that SQLAlchemy adds
+        cargs[0] = cargs[0].replace(";Trusted_Connection=Yes", "")
+        # create token credential
+        token_bytes = azure_credentials.get_token(TOKEN_URL).token.encode(TOKEN_ENCODE_CODEC)
+        token_struct = struct.pack(f"<I{len(token_bytes)}s", len(token_bytes), token_bytes)
+        # apply it to keyword arguments
+        cparams["attrs_before"] = {SQL_COPT_SS_ACCESS_TOKEN: token_struct}
+    return provide_token
 
 class MSSQLConnector(SQLConnector):
     """Connects to the mssql SQL source."""
@@ -35,6 +65,10 @@ class MSSQLConnector(SQLConnector):
         if config.get("driver_type") == "pyodbc":
             pyodbc.pooling = False
 
+        if config.get("azure_access_tokens").lower() == "true":
+            azure_credentials: identity.DefaultAzureCredential = identity.DefaultAzureCredential()
+            event.listen(sa.Engine, "do_connect", make_provide_token(azure_credentials))
+
         super().__init__(config, sqlalchemy_url)
 
     def get_sqlalchemy_url(self, config: dict[str, t.Any]) -> str:
@@ -49,9 +83,9 @@ class MSSQLConnector(SQLConnector):
         url_drivername = f"{config.get('dialect')}+{config.get('driver_type')}"
 
         config_url = sa.URL.create(
-            url_drivername,
-            config.get("user"),
-            config.get("password"),
+            drivername=url_drivername,
+            username=config.get("user"),
+            password=config.get("password"),
             host=config.get("host"),
             database=config.get("database")
         )

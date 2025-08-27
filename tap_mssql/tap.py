@@ -48,13 +48,11 @@ class Tapmssql(SQLTap):
             "user",
             th.StringType,
             description="The User Account who has been granted access to the SQL Server",  # noqa: E501
-            required=True
         ),
         th.Property(
             "password",
             th.StringType,
             description="The Password for the User account",
-            required=True,
             secret=True
         ),
         th.Property(
@@ -62,6 +60,12 @@ class Tapmssql(SQLTap):
             th.StringType,
             description="The Default database for this connection",
             required=True
+        ),
+        th.Property(
+            "azure_access_tokens",
+            th.StringType,
+            description="Obtain Azure Access Tokens when connecting: \'True\', \'False\'",
+            default="False"
         ),
         th.Property(
             "sqlalchemy_eng_params",
