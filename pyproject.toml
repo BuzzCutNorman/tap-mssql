@@ -1,3 +1,10 @@
+[build-system]
+requires = [
+    "hatchling>=1,<2",
+    "hatch-vcs>=0.5",
+]
+build-backend = "hatchling.build"
+
 [project]
 name = "tap-mssql"
 version = "0.2.0"
@@ -12,28 +19,31 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 license = "MIT"
 license-files = [ "LICENSE.md" ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "singer-sdk[msgspec]~=0.46.4",
-    "pyodbc>=5.2.0,<6",
-    "pymssql>=2.3.4,<3",
-    "azure-identity>=1.23.0",
+    "singer-sdk[msgspec]~=0.53.7",
+    "pyodbc>=5.3.0,<6",
+    "pymssql>=2.3.13,<3",
+    "azure-identity>=1.25.3",
+    "sqlalchemy~=2.0.36",
+    "typing-extensions>=4.5.0; python_version < '3.13'",
 ]
 
 [project.optional-dependencies]
 s3 = [
-    "s3fs~=2025.5.0",
+    "s3fs>=2026.1.0",
 ]
 
 [project.scripts]
+# CLI declaration
 tap-mssql = "tap_mssql.tap:Tapmssql.cli"
 
 [dependency-groups]
@@ -41,24 +51,56 @@ dev = [
     { include-group = "test" },
 ]
 test = [
-    "pytest>=8",
-
+    "pytest>=9",
     "singer-sdk[testing]",
 ]
-
-[tool.pytest.ini_options]
-addopts = [
-    "--durations=10",
+typing = [
+    "mypy>=1.19.1",
+    "ty>=0.0.18",
+    "sqlalchemy-stubs",
+]
+[tool.hatch.build.targets.wheel]
+packages = [
+    "tap_mssql",
 ]
 
+[tool.hatch.version]
+fallback-version = "0.1.0.dev0"
+source = "vcs"
+
 [tool.mypy]
-python_version = "3.12"
+enable_error_code = [
+    "ignore-without-code",
+    "redundant-expr",
+    "truthy-bool",
+]
+warn_redundant_casts = true
+warn_unreachable = true
 warn_unused_configs = true
-plugins = "sqlmypy"
+warn_unused_ignores = true
+
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
+
+[tool.pytest]
+addopts = [
+    "-ra",
+]
+filterwarnings = [
+    "error",
+    "once:No records were available to test:UserWarning",
+    "once:Fields in transformed catalog but not in records:UserWarning",
+]
+log_level = "INFO"
+minversion = "9"
+strict = true
+testpaths = [
+    "tests",
+]
 
 [tool.ruff]
-src = ["tap_mssql"]
-target-version = "py39"
+line-length = 100
+required-version = ">=0.15"
 
 [tool.ruff.lint]
 ignore = [
@@ -72,11 +114,42 @@ select = ["ALL"]
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+  "S101",  # assert is used by pytest
+]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[build-system]
+# This configuration can be used to customize tox environments
+[tool.tox]
 requires = [
-    "hatchling>=1,<2",
+    "tox>=4.43",
+    "tox-uv",
 ]
-build-backend = "hatchling.build"
+env_list = [
+    "typing",
+    { product = [
+        { prefix = "3.", start = 10 },
+    ] },
+]
+
+[tool.tox.env_run_base]
+description = "run tests on Python {env_name}"
+runner = "uv-venv-lock-runner"
+pass_env = [
+    "CI",
+    "GITHUB_*",
+    "TAP_MSSQL_*",
+]
+dependency_groups = [ "test" ]
+commands = [ [ "pytest", { replace = "posargs", default = [ "tests" ], extend = true } ] ]
+
+[tool.tox.env.typing]
+description = "type checks"
+dependency_groups = [ "test", "typing" ]
+commands = [
+    [ "mypy", { replace = "posargs", default = [ "tap_mssql", "tests" ], extend = true } ],
+    [ "ty", "check", { replace = "posargs", default = [ "tap_mssql", "tests" ], extend = true } ],
+]
