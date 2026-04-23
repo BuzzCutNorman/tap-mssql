@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 from singer_sdk.contrib.msgspec import MsgSpecWriter
+from singer_sdk.sql import SQLTap
 
 from .client import MSSQLStream
 
@@ -28,7 +28,7 @@ class Tapmssql(SQLTap):
         th.Property(
             "driver_type",
             th.StringType,
-            description="The Python Driver you will be using to connect to the SQL server",  # noqa: E501
+            description="The Python Driver you will be using to connect to the SQL server",
             required=True,
             allowed_values=["pyodbc", "pymssql"],
             default="pymssql"
@@ -47,7 +47,7 @@ class Tapmssql(SQLTap):
         th.Property(
             "user",
             th.StringType,
-            description="The User Account who has been granted access to the SQL Server",  # noqa: E501
+            description="The User Account who has been granted access to the SQL Server",
         ),
         th.Property(
             "password",
@@ -89,7 +89,7 @@ class Tapmssql(SQLTap):
                 th.Property(
                     "driver",
                     th.StringType,
-                    description="The Driver to use when connection should match the Driver Type"  # noqa: E501
+                    description="The Driver to use when connection should match the Driver Type"
                 ),
                 th.Property(
                     "MultiSubnetFailover",
@@ -118,7 +118,7 @@ class Tapmssql(SQLTap):
                         th.Property(
                             "compression",
                             th.StringType,
-                            description="Currently the only compression options is gzip",  # noqa: E501
+                            description="Currently the only compression options is gzip",
                         )
                     )
                 ),
@@ -128,7 +128,7 @@ class Tapmssql(SQLTap):
                         th.Property(
                             "root",
                             th.StringType,
-                            description=("the directory you want batch messages to be placed in\n"  # noqa: E501
+                            description=("the directory you want batch messages to be placed in\n"
                                         "example: file://test/batches"
                             )
                         ),
