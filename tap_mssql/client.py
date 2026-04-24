@@ -14,9 +14,9 @@ from uuid import uuid4
 import pyodbc
 import sqlalchemy as sa
 from azure import identity
-from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from singer_sdk.contrib.msgspec import serialize_jsonl
+from singer_sdk.sql import SQLConnector, SQLStream
 from sqlalchemy import event
 
 if t.TYPE_CHECKING:
