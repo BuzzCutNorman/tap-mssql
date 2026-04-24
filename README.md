@@ -6,6 +6,8 @@
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ### Whats New 🛳️🎉
+**2026-04-24 Upgraded to Meltano Singer-SDK 0.53.7**
+
 **2025-08-26 Azure Access Tokens:**  In issue [#82](https://github.com/BuzzCutNorman/tap-mssql/issues/82) Alec and Josuha requested the ability to authenticate with Azure SQL Server Managed Instances using Azure Access Tokens. They gave me great links to examples and SQLAlchemy had a section with more code examples. After months of Josuha testing over and over and over and over again 😅 the feature is working.  If you want to give it a try use the config option `azure_access_tokens = 'True'`.  Huge thanks 🙏 to Josuha and his coworkers.
 
 **2024-06-23 Upgraded to Meltano Singer-SDK 0.46.4:** Edger at Arch implemented an MsgSpecWriter class in the SDK.  I updated tap-mssql to utilize the SDK's implementation of msgspec.  Thanks Edger 🙏.
