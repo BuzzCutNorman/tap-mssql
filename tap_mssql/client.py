@@ -411,6 +411,40 @@ class MSSQLConnector(SQLConnector):
         """
         return SQLConnector.to_sql_type(jsonschema_type)
 
+    def get_table_columns(
+        self,
+        full_table_name: str | FullyQualifiedName,
+        column_names: list[str] | None = None,
+    ) -> dict[str, sa.Column]:
+        """Return table columns, trusting catalog for columns inspector omits.
+
+        When inspector.get_columns() omits columns (e.g. MSSQL views over
+        table-valued functions in SQLAlchemy 2.x), we still include them if
+        they are in column_names — trust the catalog over live reflection.
+        """
+        result = super().get_table_columns(full_table_name, column_names)
+
+        if not column_names:
+            return result
+
+        inspector_by_key = {
+            col_name.casefold(): (col_name, col)
+            for col_name, col in result.items()
+        }
+
+        columns_dict: dict[str, sa.Column] = {}
+        for col_name in column_names:
+            key = col_name.casefold()
+            if key in inspector_by_key:
+                orig_name, col = inspector_by_key[key]
+                columns_dict[orig_name] = col
+            else:
+                columns_dict[col_name] = sa.Column(
+                    col_name, sa.Text(), nullable=True
+                )
+
+        return columns_dict
+
 
 class JSONLinesBatcher(BaseBatcher):
     """JSON Lines Record Batcher."""
