@@ -68,6 +68,32 @@ class Tapmssql(SQLTap):
             default="False"
         ),
         th.Property(
+            "filter_tables",
+            th.ArrayType(th.StringType),
+            description=(
+                "Limit discovery to these tables/views. Accepts 'dbo.bJCJM' or the "
+                "Singer stream-id form 'dbo-bJCJM.*', so one list can also serve a "
+                "pipeline's selection rules (e.g. via a YAML anchor). Names without "
+                "a schema use the first entry of filter_schemas. When omitted, every "
+                "table and view in each discovered schema is reflected, which on a "
+                "large remote database is dominated by round-trip latency (~4,200 "
+                "objects took ~27 minutes on a Trimble Vista instance). Stream "
+                "selection happens downstream and is not visible to the tap. Objects "
+                "that do not exist are logged and skipped, not fatal."
+            )
+        ),
+        th.Property(
+            "filter_schemas",
+            th.ArrayType(th.StringType),
+            description=(
+                "Limit discovery to these schemas, e.g. ['dbo']. When omitted, every "
+                "schema in the database is reflected, which is slow on large databases "
+                "and fails outright when a schema name contains a dot (SQL Server "
+                "auto-creates schemas named after Windows logins, and SQLAlchemy reads "
+                "a dotted schema as 'database.schema')."
+            )
+        ),
+        th.Property(
             "sqlalchemy_eng_params",
             th.ObjectType(
                 th.Property(

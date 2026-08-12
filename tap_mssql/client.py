@@ -22,6 +22,7 @@ from sqlalchemy import event
 if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
     from sqlalchemy.engine import Engine
+    from sqlalchemy.engine.reflection import Inspector
 
 # Connection option for access tokens, as defined in msodbcsql.h
 SQL_COPT_SS_ACCESS_TOKEN = 1256
@@ -70,6 +71,164 @@ class MSSQLConnector(SQLConnector):
             event.listen(sa.Engine, "do_connect", make_provide_token(azure_credentials))
 
         super().__init__(config, sqlalchemy_url)
+
+    def get_schema_names(
+        self,
+        engine: Engine,
+        inspected: Inspector,
+    ) -> list[str]:
+        r"""Return the schema names to discover, honoring `filter_schemas`.
+
+        Discovery otherwise reflects every schema in the database, which is both
+        slow on large databases and outright fatal on some SQL Server instances:
+        a schema named after a Windows login (e.g. `MYDOMAIN\First.Last`)
+        contains a dot, and SQLAlchemy's MSSQL dialect reads a dotted schema as
+        `database.schema` and issues a `USE [MYDOMAIN\First]`, failing with
+        "Database ... does not exist" (error 911).
+
+        Args:
+            engine: SQLAlchemy engine
+            inspected: SQLAlchemy inspector instance for engine
+
+        Returns:
+            List of schema names
+        """
+        filter_schemas = self.config.get("filter_schemas")
+        if filter_schemas:
+            return list(filter_schemas)
+
+        return super().get_schema_names(engine, inspected)
+
+    @staticmethod
+    def _parse_filter_table(entry: str) -> tuple[str | None, str]:
+        """Split a `filter_tables` entry into (schema, table).
+
+        Two forms are accepted, so that one list can serve both this setting and a
+        pipeline's stream-selection rules (e.g. via a YAML anchor):
+
+        - `schema.table`     -> ("schema", "table")
+        - `schema-table.*`   -> ("schema", "table")   Singer stream-id form, where
+          the stream id joins schema and table with a hyphen and `.*` selects all
+          of its properties.
+
+        The trailing `.*` is what distinguishes the second form, so a schema name
+        containing a hyphen is still safe in the first.
+
+        Args:
+            entry: A single filter_tables entry.
+
+        Returns:
+            Tuple of (schema name or None, table name).
+        """
+        entry = entry.strip()
+
+        if entry.endswith(".*"):
+            stream_id = entry[:-2]
+            schema_name, separator, table_name = stream_id.partition("-")
+            if separator:
+                return schema_name, table_name
+            return None, stream_id
+
+        schema_name, _, table_name = entry.rpartition(".")
+        return schema_name or None, table_name
+
+    def discover_catalog_entries(
+        self,
+        *,
+        exclude_schemas: t.Sequence[str] = (),
+        reflect_indices: bool = True,
+    ) -> list[dict]:
+        """Discover catalog entries, honoring `filter_tables`.
+
+        The default implementation bulk-reflects every table and view in each
+        schema, then the pipeline discards all but the selected streams. On a
+        large remote database that is dominated by round-trip latency: a Trimble
+        Vista instance has ~4,200 objects in `dbo` and takes ~27 minutes to
+        discover, of which ~13 seconds is CPU.
+
+        When `filter_tables` is set, reflect only those objects instead, turning
+        discovery cost into a function of what is actually wanted. Selection rules
+        are applied downstream by the pipeline and are not visible to the tap, so
+        this list is configured separately -- see `_parse_filter_table` for the
+        entry forms that let a single list serve both.
+
+        Args:
+            exclude_schemas: A list of schema names to exclude from discovery.
+            reflect_indices: Whether to reflect indices to detect potential
+                primary keys.
+
+        Returns:
+            The discovered catalog entries as a list.
+        """
+        filter_tables = self.config.get("filter_tables")
+        if not filter_tables:
+            return super().discover_catalog_entries(
+                exclude_schemas=exclude_schemas,
+                reflect_indices=reflect_indices,
+            )
+
+        engine = self._engine
+        inspected = sa.inspect(engine)
+        default_schema = self.config.get("filter_schemas") or [None]
+        view_names_by_schema: dict[str | None, set[str]] = {}
+        result: list[dict] = []
+
+        for qualified_name in filter_tables:
+            schema_name, table_name = self._parse_filter_table(qualified_name)
+            schema = schema_name or default_schema[0]
+
+            if schema in exclude_schemas:
+                continue
+
+            if schema not in view_names_by_schema:
+                view_names_by_schema[schema] = set(
+                    inspected.get_view_names(schema=schema)
+                )
+
+            try:
+                reflected_columns = inspected.get_columns(table_name, schema=schema)
+                reflected_pk = inspected.get_pk_constraint(table_name, schema=schema)
+                reflected_indices = (
+                    inspected.get_indexes(table_name, schema=schema)
+                    if reflect_indices
+                    else []
+                )
+            except sa.exc.NoSuchTableError:
+                # Not fatal: tenants of the same product legitimately differ (a
+                # module they do not license, a table added in a later version).
+                # Log loudly and keep going rather than failing the whole run.
+                self.logger.warning(
+                    "filter_tables: skipping '%s' -- not found in the database",
+                    qualified_name,
+                )
+                continue
+
+            if not reflected_columns:
+                self.logger.warning(
+                    "filter_tables: '%s' reflected zero columns; skipping",
+                    qualified_name,
+                )
+                continue
+
+            result.append(
+                self.discover_catalog_entry(
+                    engine,
+                    inspected,
+                    schema,
+                    table_name,
+                    table_name in view_names_by_schema[schema],
+                    reflected_columns=reflected_columns,
+                    reflected_pk=reflected_pk,
+                    reflected_indices=reflected_indices,
+                ).to_dict()
+            )
+
+        self.logger.info(
+            "filter_tables: discovered %d of %d configured objects",
+            len(result),
+            len(filter_tables),
+        )
+        return result
 
     def get_sqlalchemy_url(self, config: dict[str, t.Any]) -> str:
         """Return the SQLAlchemy URL string.
