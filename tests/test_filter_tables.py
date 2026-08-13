@@ -7,6 +7,7 @@ Vista instance took ~27 minutes wall clock for ~13 seconds of CPU.
 Uses mocks only — no database connection.
 """
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import sqlalchemy as sa
@@ -20,7 +21,20 @@ def _connector(config: dict) -> MSSQLConnector:
     with patch.object(MSSQLConnector, "create_engine", return_value=MagicMock()):
         connector = MSSQLConnector(config=config, sqlalchemy_url="placeholder")
     # discover_catalog_entries reads self._engine, which outlives the patch above.
-    connector._cached_engine = MagicMock()  # noqa: SLF001
+    engine = MagicMock()
+    # Discovery cross-checks reflection against sys.columns; these tests are not
+    # about that, so report the same single column the inspector returns.
+    engine.connect.return_value.__enter__.return_value.execute.return_value = [
+        SimpleNamespace(
+            name="Id",
+            base_type="int",
+            max_length=4,
+            precision=10,
+            scale=0,
+            is_nullable=False,
+        ),
+    ]
+    connector._cached_engine = engine  # noqa: SLF001
     return connector
 
 
@@ -115,6 +129,9 @@ def test_zero_column_reflection_is_skipped() -> None:
     inspected = _inspector()
     inspected.get_columns.return_value = []
     connector = _connector({**BASE_CONFIG, "filter_tables": ["dbo.bWeird"]})
+    # The object has no columns at all, as opposed to columns the reflection
+    # could not see — sys.columns agrees there is nothing to recover.
+    connector._cached_engine.connect.return_value.__enter__.return_value.execute.return_value = []  # noqa: E501, SLF001
 
     with patch("sqlalchemy.inspect", return_value=inspected):
         assert connector.discover_catalog_entries() == []

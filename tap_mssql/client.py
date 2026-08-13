@@ -18,6 +18,7 @@ from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.batch import BaseBatcher, lazy_chunked_generator
 from singer_sdk.contrib.msgspec import serialize_jsonl
 from sqlalchemy import event
+from sqlalchemy.dialects.mssql.base import ischema_names as mssql_ischema_names
 
 if t.TYPE_CHECKING:
     from singer_sdk.helpers.types import Context
@@ -132,6 +133,179 @@ class MSSQLConnector(SQLConnector):
         schema_name, _, table_name = entry.rpartition(".")
         return schema_name or None, table_name
 
+    # Ground truth for a table's columns, used to repair SQLAlchemy's reflection.
+    #
+    # The MSSQL dialect reflects columns by inner-joining `sys.columns` to
+    # `sys.types`, and SQL Server hides a user-defined type's row in `sys.types`
+    # from any login with no permission on that type. The inner join then drops
+    # every column that uses one -- silently, with no warning and no error.
+    #
+    # Trimble-hosted Vista is built almost entirely on UDTs (bCompany, bMonth,
+    # bGLAcct, bDollar...), so a login granted SELECT on the tables but nothing on
+    # the types reflects only the handful of plain-typed columns: dbo.bGLDT came
+    # back with 5 of its columns, and RAW got a 5-column table whose merge key
+    # named columns that were no longer in it.
+    #
+    # `sys.columns` is gated on permission on the *table*, not the type, and it
+    # carries `system_type_id` -- so joining that to the system types (always
+    # visible) recovers every column's base type without ever seeing the UDT.
+    # Vista's UDTs are aliases over system types, so the base type is what we
+    # would have loaded anyway.
+    _SYS_COLUMNS_SQL = sa.text(
+        """
+        SELECT c.name        AS name,
+               t.name        AS base_type,
+               c.max_length  AS max_length,
+               c.precision   AS precision,
+               c.scale       AS scale,
+               c.is_nullable AS is_nullable
+        FROM sys.columns c
+        JOIN sys.types t
+          ON c.system_type_id = t.user_type_id
+         AND t.is_user_defined = 0
+        WHERE c.object_id = OBJECT_ID(:object_name)
+        ORDER BY c.column_id
+        """,
+    )
+
+    # max_length is in bytes, and is -1 for the MAX variants.
+    _LENGTH_TYPES = frozenset(
+        {"char", "varchar", "nchar", "nvarchar", "binary", "varbinary"},
+    )
+    _DOUBLE_BYTE_TYPES = frozenset({"nchar", "nvarchar"})
+    _PRECISION_TYPES = frozenset({"decimal", "numeric"})
+    _SCALE_ONLY_TYPES = frozenset({"datetime2", "time", "datetimeoffset"})
+
+    def _sys_columns(self, schema: str | None, table_name: str) -> list[sa.Row]:
+        """Return `sys.columns` rows for a table, or [] if they cannot be read."""
+        object_name = f"{schema}.{table_name}" if schema else table_name
+        try:
+            with self._engine.connect() as conn:
+                return list(
+                    conn.execute(
+                        self._SYS_COLUMNS_SQL,
+                        {"object_name": object_name},
+                    )
+                )
+        except sa.exc.SQLAlchemyError:
+            # Never fatal on its own: without these rows we simply cannot repair
+            # the reflection, and the guard below still catches a broken entry.
+            self.logger.exception(
+                "Could not read sys.columns for '%s'; reflection cannot be "
+                "checked for columns dropped by user-defined types",
+                object_name,
+            )
+            return []
+
+    def _sa_type_from_sys_row(self, row: sa.Row) -> sa.types.TypeEngine:
+        """Build the SQLAlchemy type the dialect would have produced."""
+        type_class = mssql_ischema_names.get(row.base_type)
+        if type_class is None:
+            self.logger.warning(
+                "No SQLAlchemy type for MSSQL base type '%s'; treating column "
+                "'%s' as text",
+                row.base_type,
+                row.name,
+            )
+            return sa.Text()
+
+        if row.base_type in self._LENGTH_TYPES:
+            if row.max_length == -1:  # the MAX variants
+                return type_class(None)
+            length = row.max_length
+            if row.base_type in self._DOUBLE_BYTE_TYPES:
+                length //= 2
+            return type_class(length)
+
+        if row.base_type in self._PRECISION_TYPES:
+            return type_class(row.precision, row.scale)
+
+        if row.base_type in self._SCALE_ONLY_TYPES:
+            return type_class(row.scale)
+
+        return type_class()
+
+    def _reflect_columns(
+        self,
+        inspected: Inspector,
+        schema: str | None,
+        table_name: str,
+    ) -> list[dict]:
+        """Reflect a table's columns, restoring any the dialect dropped.
+
+        See `_SYS_COLUMNS_SQL` for why reflection loses columns. On an instance
+        where the login can see every type this returns the dialect's own result
+        untouched.
+        """
+        reflected = inspected.get_columns(table_name, schema=schema)
+        actual = self._sys_columns(schema, table_name)
+        if not actual:
+            return reflected
+
+        reflected_by_name = {column["name"]: column for column in reflected}
+        missing = [row.name for row in actual if row.name not in reflected_by_name]
+        if not missing:
+            return reflected
+
+        object_name = f"{schema}.{table_name}" if schema else table_name
+        self.logger.warning(
+            "'%s': SQLAlchemy reflected %d of %d columns. Recovering %d from "
+            "sys.columns using their base types: %s. This login cannot see the "
+            "user-defined types those columns use -- `GRANT VIEW DEFINITION ON "
+            "SCHEMA::%s TO <login>` fixes it at the source.",
+            object_name,
+            len(reflected),
+            len(actual),
+            len(missing),
+            ", ".join(missing),
+            schema or "dbo",
+        )
+
+        recovered = [
+            reflected_by_name.get(row.name)
+            or {
+                "name": row.name,
+                "type": self._sa_type_from_sys_row(row),
+                "nullable": bool(row.is_nullable),
+                "default": None,
+                "comment": None,
+            }
+            for row in actual
+        ]
+        # Anything the dialect saw but sys.columns did not (not expected) is kept
+        # rather than dropped.
+        actual_names = {row.name for row in actual}
+        recovered.extend(
+            column for column in reflected if column["name"] not in actual_names
+        )
+        return recovered
+
+    @staticmethod
+    def _check_key_properties(object_name: str, entry: dict) -> None:
+        """Fail if a catalog entry's key names a column the entry does not have.
+
+        Key properties and columns are reflected by two separate queries, and
+        constraint metadata stays visible when column metadata is not -- so a
+        table can come back with an intact primary key over columns that are no
+        longer in its schema. Loading that entry either fails deep in the target
+        with an unexplained `invalid identifier`, or, for a stream the target
+        loads by COPY rather than MERGE, quietly lands a table missing most of
+        its columns. Neither is worth continuing for.
+        """
+        properties = (entry.get("schema") or {}).get("properties") or {}
+        missing = [
+            key for key in entry.get("key_properties") or [] if key not in properties
+        ]
+        if missing:
+            msg = (
+                f"'{object_name}': key properties {missing} are not among the "
+                f"{len(properties)} discovered columns. The table's columns were "
+                "reflected incompletely -- most likely this login cannot see the "
+                "user-defined types they use. Fix the source permissions ("
+                "`GRANT VIEW DEFINITION`) rather than loading a partial table."
+            )
+            raise RuntimeError(msg)
+
     def discover_catalog_entries(
         self,
         *,
@@ -186,7 +360,7 @@ class MSSQLConnector(SQLConnector):
                 )
 
             try:
-                reflected_columns = inspected.get_columns(table_name, schema=schema)
+                reflected_columns = self._reflect_columns(inspected, schema, table_name)
                 reflected_pk = inspected.get_pk_constraint(table_name, schema=schema)
                 reflected_indices = (
                     inspected.get_indexes(table_name, schema=schema)
@@ -210,18 +384,18 @@ class MSSQLConnector(SQLConnector):
                 )
                 continue
 
-            result.append(
-                self.discover_catalog_entry(
-                    engine,
-                    inspected,
-                    schema,
-                    table_name,
-                    table_name in view_names_by_schema[schema],
-                    reflected_columns=reflected_columns,
-                    reflected_pk=reflected_pk,
-                    reflected_indices=reflected_indices,
-                ).to_dict()
-            )
+            entry = self.discover_catalog_entry(
+                engine,
+                inspected,
+                schema,
+                table_name,
+                table_name in view_names_by_schema[schema],
+                reflected_columns=reflected_columns,
+                reflected_pk=reflected_pk,
+                reflected_indices=reflected_indices,
+            ).to_dict()
+            self._check_key_properties(qualified_name, entry)
+            result.append(entry)
 
         self.logger.info(
             "filter_tables: discovered %d of %d configured objects",
